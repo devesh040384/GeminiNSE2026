@@ -1,154 +1,172 @@
 import logging
-import sqlite3
 import time
-from collections import deque
-import statistics
+import collections
+import pandas as pd
+from datetime import datetime
+import json
+import os
 
 class StrategyBrain:
-    def __init__(self, order_engine, options_builders):
+    def __init__(self, order_engine, options_builders, scrip_master_data=None):
         self.order_engine = order_engine
         self.options_builders = options_builders
+        self.scrip_master_data = scrip_master_data
         
-        # State tracking for NIFTY only
-        self.market_state = {
-            "NIFTY": {
-                "prices": deque(maxlen=14),  
-                "last_rsi": None
-            }
-        }
+        # Price history buffer for calculating 14-period RSI
+        self.price_history = collections.deque(maxlen=20)
+        self.last_rsi = 50.0
+        self.last_candle_time = time.time()
+        self._last_debug_log = 0
         
-        self.log_counter = 0
-        self.last_signal_time = 0  # Cooldown timer
+        # 💾 STATE SAVER PATH
+        self.state_file = "rsi_state.json"
+        self._load_state() # Load memory on startup!
 
-    def _has_open_position(self):
-        """Checks the database to ensure we don't open multiple overlapping trades."""
+    def _load_state(self):
+        """Loads the saved RSI buffer from a JSON file if it exists."""
+        if os.path.exists(self.state_file):
+            try:
+                with open(self.state_file, 'r') as f:
+                    data = json.load(f)
+                    # Restore prices and previous RSI
+                    self.price_history.extend(data.get('price_history', []))
+                    self.last_rsi = data.get('last_rsi', 50.0)
+                logging.info(f"💾 [STATE RECOVERED] Restored {len(self.price_history)} minute candles and Last RSI: {self.last_rsi:.2f}")
+            except Exception as e:
+                logging.error(f"❌ Failed to load RSI state: {e}")
+
+    def _save_state(self):
+        """Saves the current RSI buffer to a JSON file."""
         try:
-            # timeout=10 prevents crashes if another thread is reading the DB
-            conn = sqlite3.connect('trade_history.db', timeout=10.0)
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'")
-            count = cursor.fetchone()[0]
-            conn.close()
-            return count > 0
+            data = {
+                'price_history': list(self.price_history),
+                'last_rsi': self.last_rsi
+            }
+            with open(self.state_file, 'w') as f:
+                json.dump(data, f)
         except Exception as e:
-            logging.error(f"❌ DB Check Error in StrategyBrain: {e}")
-            # Failsafe: If the DB is locked/failing, assume a trade is open to prevent spam
-            return True 
-
-    def evaluate_tick(self, symbol, spot_price):
-        """Processes live incoming WebSocket ticks."""
-        if symbol != "NIFTY":
-            return
-            
-        state = self.market_state["NIFTY"]
-        state["prices"].append(spot_price)
-
-        self.log_counter += 1
-        if self.log_counter % 50 == 0:
-            logging.info(f"🔎 [DEBUG - StrategyBrain] {symbol} live Spot Price received: ₹{spot_price:.2f}")
-
-        if len(state["prices"]) < 14:
-            return
-
-        current_rsi = self._calculate_rsi(list(state["prices"]))
-        current_time = time.time()
-        
-        if state["last_rsi"] is not None:
-            # RSI crosses 70 from below
-            if state["last_rsi"] <= 70 and current_rsi > 70:
-                
-                # 🛑 SAFETY CHECK 1: Cooldown Timer (Prevent Millisecond Spam)
-                if current_time - self.last_signal_time < 60:
-                    pass # Ignore signal silently during cooldown
-                    
-                # 🛑 SAFETY CHECK 2: Database Position Check (Prevent Overlapping Trades)
-                elif self._has_open_position():
-                    if self.log_counter % 50 == 0:  # Only log periodically to avoid terminal spam
-                        logging.info(f"⏳ [SKIP] {symbol} RSI > 70, but we already have an OPEN trade.")
-                        
-                else:
-                    # ✅ All checks passed. Fire the trade!
-                    logging.info(f"⚡ [SIGNAL] {symbol} RSI crossed 70! (Prev: {state['last_rsi']:.2f} -> Curr: {current_rsi:.2f})")
-                    self.last_signal_time = current_time
-                    self._trigger_entry(symbol, spot_price)
-
-        state["last_rsi"] = current_rsi
+            logging.error(f"❌ Failed to save RSI state: {e}")
 
     def _calculate_rsi(self, prices, period=14):
-        """Pure Python RSI calculation to eliminate dependency issues."""
-        if len(prices) < period:
+        """Calculates RSI using a rolling pandas window."""
+        if len(prices) < period + 1:
             return 50.0
-
-        gains = []
-        losses = []
-
-        for i in range(1, len(prices)):
-            difference = prices[i] - prices[i - 1]
-            if difference > 0:
-                gains.append(difference)
-                losses.append(0)
-            else:
-                gains.append(0)
-                losses.append(abs(difference))
-
-        avg_gain = statistics.mean(gains[-period:])
-        avg_loss = statistics.mean(losses[-period:])
-
-        if avg_loss == 0:
-            return 100.0
-
-        rs = avg_gain / avg_loss
+        s = pd.Series(list(prices))
+        delta = s.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
-        return rsi
+        return rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50.0
+
+    def evaluate_tick(self, symbol, spot_price, option_volume=None):
+        """Evaluates live websocket ticks against the RSI strategy."""
+        if symbol != "NIFTY":
+            return
+
+        current_time = time.time()
+        
+        # Debug logging (throttled to avoid console spam)
+        if current_time - self._last_debug_log > 10:
+            logging.info(f"🔎 [DEBUG - StrategyBrain] {symbol} live Spot Price received: ₹{spot_price}")
+            self._last_debug_log = current_time
+
+        state_changed = False
+
+        # Update price history (simulate 1-min candles by capturing price every 60s)
+        if current_time - self.last_candle_time >= 60:
+            self.price_history.append(spot_price)
+            self.last_candle_time = current_time
+            state_changed = True  # A new minute closed, save state
+        elif len(self.price_history) == 0:
+            self.price_history.append(spot_price)
+            state_changed = True
+        else:
+            self.price_history[-1] = spot_price # Update current unclosed candle
+
+        # Need at least 15 data points for a valid 14-period RSI
+        if len(self.price_history) < 15:
+            if state_changed:
+                self._save_state()
+            return
+
+        current_rsi = self._calculate_rsi(self.price_history)
+        
+        # 🛑 STRATEGY TRIGGER: RSI Crossover above 70
+        if self.last_rsi < 70 and current_rsi >= 70:
+            logging.info(f"⚡ [SIGNAL] {symbol} RSI crossed 70! (Prev: {self.last_rsi:.2f} -> Curr: {current_rsi:.2f})")
+            
+            # Fire the execution trigger!
+            self._trigger_entry(symbol, spot_price)
+            
+            # Reset buffers to prevent immediate duplicate trades
+            self.last_rsi = current_rsi 
+            self.price_history.clear() 
+            self._save_state() # Save empty state after trade
+        else:
+            if self.last_rsi != current_rsi:
+                self.last_rsi = current_rsi
+                state_changed = True
+
+        if state_changed:
+            self._save_state()
 
     def _trigger_entry(self, symbol, spot_price):
-        """Finds the correct contract and hands it to the order engine."""
+        """Finds the correct contract and sends it to the Order Engine."""
+        token_map = {"NIFTY": "26000"}
+        token = token_map.get(symbol)
+        
+        if not token or token not in self.options_builders:
+            logging.error(f"❌ Options builder not found for {symbol}")
+            return
+
+        builder = self.options_builders[token]
+        
+        # Bullish RSI strategy = Call Option (CE)
+        instrument_type = "CE" 
+        
+        # Dynamically fetch the At-The-Money (ATM) contract
+        contract = builder.get_nearest_expiry_contract(spot_price=spot_price, instrument_type=instrument_type)
+        
+        if not contract:
+            logging.error(f"❌ Could not find valid ATM {instrument_type} contract for {symbol} at Spot: {spot_price}")
+            return
+
+        contract_symbol = contract.get('symbol')
+        contract_token = contract.get('token')
+        strike = contract.get('strike')
+        expiry = contract.get('expiry')
+        
+        logging.info(f"✅ Selected Valid Contract: {contract_symbol} | Expiry: {expiry} | Strike: {strike}")
+        logging.info(f"🟢 [EXECUTION TRIGGER] Handing {contract_symbol} (Strike {strike}) to Order Engine...")
+        
         try:
-            token = "26000" if symbol == "NIFTY" else None
-            if not token or token not in self.options_builders:
-                logging.error(f"❌ Cannot trigger entry: Missing token or builder for {symbol}")
-                return
+            # 1. Fetch the LIVE premium of the option contract using SmartAPI
+            live_premium = 0.0
+            if getattr(self.order_engine, 'smart_api', None):
+                resp = self.order_engine.smart_api.ltpData("NFO", contract_symbol, contract_token)
+                if resp and resp.get('status'):
+                    live_premium = float(resp['data']['ltp'])
+            
+            if live_premium <= 0:
+                logging.warning(f"⚠️ Failed to fetch live premium for {contract_symbol}. Defaulting to ₹100.00 for paper trade.")
+                live_premium = 100.0 # Safety fallback for paper trading if API fails
 
-            builder = self.options_builders[token]
-            
-            atm_strike = round(spot_price / 50.0) * 50
-            
-            scrip_data = getattr(builder, 'scrip_master_data', [])
-            if not scrip_data:
-                scrip_data = getattr(self.order_engine, 'scrip_master', [])
+            # 2. Calculate dynamic Target (+10%) and Stop-Loss (-5%) based on actual premium
+            target_price = round(live_premium * 1.10, 2)
+            stop_loss_price = round(live_premium * 0.95, 2)
 
-            if not scrip_data:
-                logging.error("❌ Cannot trigger entry: JSON scrip master data is missing.")
-                return
-            
-            atm_contract = builder.get_nearest_expiry_contract(
-                scrip_master_data=scrip_data,
-                symbol=symbol,
-                option_type="CE",
-                target_strike=atm_strike
-            )
-            
-            if not atm_contract:
-                logging.warning(f"⚠️ Could not resolve ATM contract for {symbol} at strike {atm_strike}.")
-                return
-
-            # Set dynamic targets based on spot price movement
-            target_spot = spot_price + 20.0
-            stop_spot = spot_price - 10.0
-
-            logging.info(f"🟢 [EXECUTION TRIGGER] Handing {atm_contract.get('symbol', 'CE')} (Strike {atm_strike}) to Order Engine...")
-            
+            # 3. Execute the trade with ALL required arguments
             self.order_engine.execute_options_order(
-                symbol=atm_contract.get('symbol'),
-                token=atm_contract.get('token'),
+                symbol=contract_symbol,
+                strike=strike,
+                token=contract_token,
+                entry_price=live_premium,         
+                target_price=target_price,        
+                stop_loss_price=stop_loss_price,  
                 action="BUY",
-                quantity=65, 
-                target_spot=target_spot,
-                stop_spot=stop_spot,
-                instrument_type="CE",
-                strike=atm_strike,
+                instrument_type=instrument_type,
                 entry_spot=spot_price
             )
-            
         except Exception as e:
             logging.error(f"❌ Error while triggering entry for {symbol}: {e}")

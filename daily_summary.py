@@ -8,7 +8,7 @@ def run_performance_summary():
     query = """
     SELECT 
         id, 
-        timestamp as entry_timestamp, 
+        entry_timestamp, 
         symbol, 
         type as action, 
         entry_price, 

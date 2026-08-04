@@ -7,7 +7,16 @@ import pyotp
 import sqlite3
 import threading
 from datetime import datetime
+
+# Import the new Reconciler we just created
+from startup_sync import TradeReconciler 
+
 from dotenv import load_dotenv, find_dotenv
+
+from order_execution import OrderExecutionEngine
+from options_chain_builder import DynamicOptionsChainBuilder
+from strategy_brain import StrategyBrain
+
 
 # Load Environment Variables for Angel One Credentials
 dotenv_path = find_dotenv(filename='.env', raise_error_if_not_found=False)
@@ -24,7 +33,7 @@ except ModuleNotFoundError:
     from smartapi.smartWebSocketV2 import SmartWebSocketV2
 
 # =======================================================================
-# 🛠️ FIX: Recreating DatabaseManager locally to resolve the ImportError 
+# 🛠️ DatabaseManager
 # =======================================================================
 try:
     from database import migrate_database_schema
@@ -36,17 +45,16 @@ class DatabaseManager:
     def __init__(self, db_path='trade_history.db'):
         self.db_path = db_path
         if migrate_database_schema:
-            migrate_database_schema()
+            try:
+                migrate_database_schema(self.db_path)
+            except TypeError:
+                migrate_database_schema()
         logging.info("✅ Local DatabaseManager initialized.")
         
     def get_connection(self):
         # timeout=20 prevents "database is locked" crashes
         return sqlite3.connect(self.db_path, check_same_thread=False, timeout=20.0)
 # =======================================================================
-
-from order_execution import OrderExecutionEngine
-from options_chain_builder import DynamicOptionsChainBuilder
-from strategy_brain import StrategyBrain
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,12 +68,13 @@ class AIFNOBot:
         
         self.db = DatabaseManager()
         
+        # 1. Load JSON Scrip Master Cache
         self.scrip_master_data = []
         try:
             if os.path.exists('scrip_master.json'):
                 with open('scrip_master.json', 'r') as f:
                     self.scrip_master_data = json.load(f)
-                logging.info(f"📁 Successfully loaded scrip master from local cache.")
+                logging.info(f"📁 Successfully loaded scrip master from local cache ({len(self.scrip_master_data)} tokens).")
         except Exception as e:
             logging.warning(f"⚠️ Could not load local scrip master cache: {e}")
 
@@ -75,30 +84,53 @@ class AIFNOBot:
         self.tick_counter = 0  
         self.last_heartbeat = {}  
         
-        # Authenticate via .env credentials
+        # 2. Authenticate via .env credentials
         self._init_broker_session()
 
+        # 3. Options Chain Builders (Feed Loaded JSON Data)
         self.options_builders = {}
-        
-        # 🛑 STRICT NIFTY LOCK: Options Builder
         for token, index_name in [('26000', 'NIFTY')]:
-            self.options_builders[token] = DynamicOptionsChainBuilder(index_name=index_name, smart_api=self.smart_api)
-            self.options_builders[token].load_scrip_master()
+            builder = DynamicOptionsChainBuilder(index_name=index_name, smart_api=self.smart_api)
+            
+            # Pass loaded scrip data into the builder attributes
+            builder.scrip_master_data = self.scrip_master_data
+            builder.scrip_data = self.scrip_master_data
+            builder.scrip_master = self.scrip_master_data
+            
+            try:
+                builder.load_scrip_master(self.scrip_master_data)
+            except TypeError:
+                builder.load_scrip_master()
+                
+            self.options_builders[token] = builder
 
+        # 4. Order Execution Engine
         self.order_engine = OrderExecutionEngine(
             smart_api=self.smart_api, 
             db_manager=self.db, 
             scrip_master=self.scrip_master_data, 
-            paper_trading_mode=True # 🛑 FORCED PAPER TRADING
+            paper_trading=True
         )
         
         # 🛑 DAILY LIMIT & SHADOW LOGGING PATCH
         self._apply_shadow_logging_patch()
         
-        self.strategy = StrategyBrain(
-            order_engine=self.order_engine, 
-            options_builders=self.options_builders
-        )
+        # 5. Strategy Brain (Feed Loaded JSON Data & Builders)
+        try:
+            self.strategy = StrategyBrain(
+                order_engine=self.order_engine, 
+                options_builders=self.options_builders,
+                scrip_master_data=self.scrip_master_data
+            )
+        except TypeError:
+            self.strategy = StrategyBrain(
+                order_engine=self.order_engine, 
+                options_builders=self.options_builders
+            )
+            # Ensure attributes are populated on strategy instance
+            setattr(self.strategy, 'scrip_master_data', self.scrip_master_data)
+            setattr(self.strategy, 'scrip_data', self.scrip_master_data)
+            setattr(self.strategy, 'scrip_master', self.scrip_master_data)
         
         # 🚀 Start Background Threads for Monitoring Exits and EOD
         threading.Thread(target=self._continuous_exit_monitor, daemon=True).start()
@@ -108,7 +140,6 @@ class AIFNOBot:
 
     def _apply_shadow_logging_patch(self):
         """Intercepts order execution if the daily limit of 10 trades is reached."""
-        # Fixed execution method name to match the engine
         execution_method_name = 'execute_options_order'
         original_execute = getattr(self.order_engine, execution_method_name, None)
 
@@ -120,7 +151,6 @@ class AIFNOBot:
                     return {"status": "SHADOW_LOGGED"}
                 return original_execute(*args, **kwargs)
                 
-            # Overwrite the method dynamically
             setattr(self.order_engine, execution_method_name, shadow_wrapper)
             logging.info("🛡️ Shadow Logging / Daily Limit interceptor active.")
 
@@ -182,7 +212,6 @@ class AIFNOBot:
                     trade_id, symbol, token, t_type, target_premium, stop_premium = trade
                     
                     try:
-                        # Fetch Live LTP safely
                         exchange = "BFO" if "SENSEX" in symbol else "NFO"
                         response = self.smart_api.ltpData(exchange, symbol, token)
                         
@@ -191,9 +220,9 @@ class AIFNOBot:
                             exit_triggered = False
                             exit_reason = ""
 
-                            if live_ltp >= target_premium:
+                            if target_premium and live_ltp >= target_premium:
                                 exit_triggered, exit_reason = True, "TARGET HIT"
-                            elif live_ltp <= stop_premium:
+                            elif stop_premium and live_ltp <= stop_premium:
                                 exit_triggered, exit_reason = True, "STOPLOSS HIT"
 
                             if exit_triggered:
@@ -210,7 +239,6 @@ class AIFNOBot:
                     except Exception as e:
                         logging.error(f"❌ Exception fetching live LTP for {symbol}: {e}")
 
-                    # 🎯 Wait 1 second between API calls to prevent "Access Denied" rate limits
                     time.sleep(1.0)
 
             except Exception as e:
@@ -267,14 +295,13 @@ class AIFNOBot:
                     logging.info(f"💓 [HEARTBEAT] NIFTY @ {ltp:.2f} | Trades Today: {trades_today}/10")
                     self.last_heartbeat[symbol] = current_time
 
-                # Pass clean spot price to strategy for true EMA calculation & entry checks
+                # Pass clean spot price to strategy
                 self.strategy.evaluate_tick(symbol=symbol, spot_price=ltp)
         except Exception as e:
             logging.error(f"❌ Error processing live data feed tick: {e}")
 
     def _on_open(self, ws):
         logging.info("🔌 Live WebSocket Connection Established. Subscribing to NIFTY token...")
-        # 🛑 STRICT NIFTY LOCK: Subscriptions
         token_list = [
             {"exchangeType": 1, "tokens": ["26000"]}
         ]
@@ -284,7 +311,23 @@ class AIFNOBot:
     def _on_close(self, ws, close_status_code, close_msg):
         logging.critical("🚨 [FATAL] Live WebSocket Connection closed.")
 
+    def _on_error(self, ws, error, *args, **kwargs):
+        """Catches and handles WebSocket errors gracefully (like EOD disconnects) without crashing."""
+        logging.warning(f"⚠️ [WEBSOCKET WARNING] Connection dropped or interrupted: {error}")
+
     def run(self):
+        logging.info("Starting broker reconciliation...")
+        
+        # ---------------------------------------------------------
+        # NEW CODE: Broker Synchronization
+        # ---------------------------------------------------------
+        reconciler = TradeReconciler(smart_api=self.smart_api, db_path="trade_history.db")
+        sync_success = reconciler.sync_open_positions()
+        
+        if not sync_success:
+            logging.critical("🛑 Halting startup: Broker sync failed. Check API connection.")
+            return # Prevents the bot from starting blindly
+            
         logging.info("Launching core live WebSocket market data stream...")
         try:
             if self.smart_api and self.feed_token:
@@ -299,6 +342,7 @@ class AIFNOBot:
                 )
                 self.sws.on_open = self._on_open
                 self.sws.on_data = self._on_data_feed
+                self.sws.on_error = self._on_error
                 self.sws.on_close = self._on_close
                 self.sws.connect()
             else:
