@@ -7,7 +7,9 @@ class OrderExecutionEngine:
         self.db_manager = db_manager
         self.paper_trading = paper_trading
         # Ensure database schema is initialised upon startup
-        database.init_db()
+        #database.init_db()
+        if hasattr(database, 'migrate_database_schema'):
+            database.migrate_database_schema()
 
     def execute_options_order(self, symbol, strike, entry_price, target_price=0.0, stop_loss_price=0.0, token="", qty=65, quantity=65, action="BUY", instrument_type="CE", entry_spot=0.0, **kwargs):
         """

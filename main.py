@@ -6,9 +6,9 @@ import json
 import pyotp
 import sqlite3
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Import the new Reconciler we just created
+# Import the Reconciler
 from startup_sync import TradeReconciler 
 
 from dotenv import load_dotenv, find_dotenv
@@ -16,7 +16,6 @@ from dotenv import load_dotenv, find_dotenv
 from order_execution import OrderExecutionEngine
 from options_chain_builder import DynamicOptionsChainBuilder
 from strategy_brain import StrategyBrain
-
 
 # Load Environment Variables for Angel One Credentials
 dotenv_path = find_dotenv(filename='.env', raise_error_if_not_found=False)
@@ -41,7 +40,7 @@ except ImportError:
     migrate_database_schema = None
 
 class DatabaseManager:
-    """A lightweight bridge to keep OrderExecutionEngine happy."""
+    """A lightweight bridge to keep OrderExecutionEngine and Study Logs happy."""
     def __init__(self, db_path='trade_history.db'):
         self.db_path = db_path
         if migrate_database_schema:
@@ -49,11 +48,49 @@ class DatabaseManager:
                 migrate_database_schema(self.db_path)
             except TypeError:
                 migrate_database_schema()
+        
+        # Ensure study_signals table exists for post-limit analysis
+        self._init_study_table()
         logging.info("✅ Local DatabaseManager initialized.")
         
     def get_connection(self):
         # timeout=20 prevents "database is locked" crashes
         return sqlite3.connect(self.db_path, check_same_thread=False, timeout=20.0)
+
+    def _init_study_table(self):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS study_signals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT,
+                    symbol TEXT,
+                    instrument_type TEXT,
+                    spot_price REAL,
+                    reason TEXT
+                )
+            """)
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logging.error(f"❌ Failed to initialize study_signals table: {e}")
+
+    def log_study_signal(self, symbol, spot_price, instrument_type, reason="STUDY_TRIGGER"):
+        """Logs post-limit signals for study/backtesting purposes without executing orders."""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            # Store in clean IST format
+            ist_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute("""
+                INSERT INTO study_signals (timestamp, symbol, instrument_type, spot_price, reason)
+                VALUES (?, ?, ?, ?, ?)
+            """, (ist_time, symbol, instrument_type, spot_price, reason))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logging.error(f"❌ Failed to log study signal: {e}")
 # =======================================================================
 
 logging.basicConfig(
@@ -81,7 +118,7 @@ class AIFNOBot:
         self.smart_api = None
         self.feed_token = None
         self.sws = None  
-        self.tick_counter = 0  
+        self.tick_counter =  0  
         self.last_heartbeat = {}  
         
         # 2. Authenticate via .env credentials
@@ -92,7 +129,6 @@ class AIFNOBot:
         for token, index_name in [('26000', 'NIFTY')]:
             builder = DynamicOptionsChainBuilder(index_name=index_name, smart_api=self.smart_api)
             
-            # Pass loaded scrip data into the builder attributes
             builder.scrip_master_data = self.scrip_master_data
             builder.scrip_data = self.scrip_master_data
             builder.scrip_master = self.scrip_master_data
@@ -112,7 +148,7 @@ class AIFNOBot:
             paper_trading=True
         )
         
-        # 🛑 DAILY LIMIT & SHADOW LOGGING PATCH
+        # 🛡️ DAILY LIMIT & SHADOW STUDY LOGGING PATCH
         self._apply_shadow_logging_patch()
         
         # 5. Strategy Brain (Feed Loaded JSON Data & Builders)
@@ -127,7 +163,6 @@ class AIFNOBot:
                 order_engine=self.order_engine, 
                 options_builders=self.options_builders
             )
-            # Ensure attributes are populated on strategy instance
             setattr(self.strategy, 'scrip_master_data', self.scrip_master_data)
             setattr(self.strategy, 'scrip_data', self.scrip_master_data)
             setattr(self.strategy, 'scrip_master', self.scrip_master_data)
@@ -139,7 +174,7 @@ class AIFNOBot:
         logging.info("✅ Framework fully loaded and ready for NIFTY live feeds.")
 
     def _apply_shadow_logging_patch(self):
-        """Intercepts order execution if the daily limit of 10 trades is reached."""
+        """Intercepts order execution if daily limit of 10 trades is reached, switching to Study Mode."""
         execution_method_name = 'execute_options_order'
         original_execute = getattr(self.order_engine, execution_method_name, None)
 
@@ -147,18 +182,23 @@ class AIFNOBot:
             def shadow_wrapper(*args, **kwargs):
                 count = self._get_daily_trade_count()
                 if count >= 10:
-                    logging.info(f"👻 [SHADOW SIGNAL] Daily limit (10) reached. Valid NIFTY setup generated but skipped execution.")
-                    return {"status": "SHADOW_LOGGED"}
+                    symbol = kwargs.get('symbol', 'UNKNOWN')
+                    spot = kwargs.get('entry_spot', 0.0)
+                    inst_type = kwargs.get('instrument_type', 'CE')
+                    
+                    logging.info(f"📚 [STUDY SIGNAL CAPTURED] Daily limit (10) reached. Valid {inst_type} signal recorded for analysis @ Spot: {spot}")
+                    self.db.log_study_signal(symbol, spot, inst_type, reason="DAILY_LIMIT_REACHED_STUDY")
+                    return {"status": "STUDY_LOGGED"}
                 return original_execute(*args, **kwargs)
                 
             setattr(self.order_engine, execution_method_name, shadow_wrapper)
-            logging.info("🛡️ Shadow Logging / Daily Limit interceptor active.")
+            logging.info("🛡️ Shadow Study Logging & Daily Limit interceptor active.")
 
     def _get_daily_trade_count(self):
-        """Counts how many trades have been executed today."""
+        """Counts how many trades have been executed today in IST."""
         try:
-            today_str = datetime.now().strftime("%Y-%m-%d")
-            conn = sqlite3.connect('trade_history.db', timeout=20.0)
+            today_str = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d")
+            conn = self.db.get_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM trades WHERE entry_timestamp LIKE ?", (today_str + '%',))
             count = cursor.fetchone()[0]
@@ -194,13 +234,13 @@ class AIFNOBot:
             sys.exit(1)
 
     def _continuous_exit_monitor(self):
-        """🎯 RATE-LIMITED EXIT MONITOR: Runs in background, checks open trades."""
-        logging.info("🛡️ Rate-Limited Exit Monitor active.")
+        """🎯 TRAILING STOP-LOSS (TSL) EXIT MONITOR: Dynamically locks in profit as price rises."""
+        logging.info("🛡️ Trailing Stop-Loss Exit Monitor active.")
         while True:
             try:
-                conn = sqlite3.connect('trade_history.db', timeout=20.0)
+                conn = self.db.get_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT id, symbol, token, type, target_spot, stop_spot FROM trades WHERE status='OPEN'")
+                cursor.execute("SELECT id, symbol, token, entry_price, stop_spot, peak_price FROM trades WHERE status='OPEN'")
                 open_trades = cursor.fetchall()
                 conn.close()
                 
@@ -209,32 +249,64 @@ class AIFNOBot:
                     continue
 
                 for trade in open_trades:
-                    trade_id, symbol, token, t_type, target_premium, stop_premium = trade
+                    trade_id, symbol, token, entry_price, stop_spot, peak_price = trade
                     
+                    if not entry_price or entry_price <= 0:
+                        continue
+                        
+                    if not peak_price or peak_price < entry_price:
+                        peak_price = entry_price
+                        
+                    if not stop_spot or stop_spot <= 0:
+                        stop_spot = round(entry_price * 0.95, 2)
+
                     try:
                         exchange = "BFO" if "SENSEX" in symbol else "NFO"
                         response = self.smart_api.ltpData(exchange, symbol, token)
                         
                         if response and response.get('status'):
-                            live_ltp = response['data']['ltp']
-                            exit_triggered = False
-                            exit_reason = ""
+                            live_ltp = float(response['data']['ltp'])
+                            
+                            if live_ltp > peak_price:
+                                peak_price = live_ltp
+                                activation_price = entry_price * 1.10
+                                if peak_price >= activation_price:
+                                    new_sl = round(peak_price * 0.95, 2)
+                                    if new_sl > stop_spot:
+                                        stop_spot = new_sl
+                                        locked_pnl = ((stop_spot - entry_price) / entry_price) * 100
+                                        logging.info(
+                                            f"📈 [TSL TRAILED] {symbol} | New Peak: ₹{peak_price:.2f} | "
+                                            f"Updated Trailing SL: ₹{stop_spot:.2f} (Locked Profit: {locked_pnl:+.1f}%)"
+                                        )
 
-                            if target_premium and live_ltp >= target_premium:
-                                exit_triggered, exit_reason = True, "TARGET HIT"
-                            elif stop_premium and live_ltp <= stop_premium:
-                                exit_triggered, exit_reason = True, "STOPLOSS HIT"
+                            conn = self.db.get_connection()
+                            cursor = conn.cursor()
+                            cursor.execute(
+                                "UPDATE trades SET peak_price=?, stop_spot=? WHERE id=?",
+                                (peak_price, stop_spot, trade_id)
+                            )
+                            conn.commit()
+                            conn.close()
 
-                            if exit_triggered:
-                                conn = sqlite3.connect('trade_history.db', timeout=20.0)
+                            if live_ltp <= stop_spot:
+                                exit_reason = "TRAILING SL HIT" if stop_spot >= entry_price else "STOPLOSS HIT"
+                                pnl_pct = ((live_ltp - entry_price) / entry_price) * 100
+                                
+                                ist_exit_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+                                
+                                conn = self.db.get_connection()
                                 cursor = conn.cursor()
                                 cursor.execute(
-                                    "UPDATE trades SET status=?, exit_price=?, exit_time=CURRENT_TIMESTAMP, exit_reason=? WHERE id=?", 
-                                    (f"CLOSED - {exit_reason}", live_ltp, exit_reason, trade_id)
+                                    "UPDATE trades SET status=?, exit_price=?, exit_time=?, exit_reason=? WHERE id=?", 
+                                    (f"CLOSED - {exit_reason}", live_ltp, ist_exit_time, exit_reason, trade_id)
                                 )
                                 conn.commit()
                                 conn.close()
-                                logging.info(f"🚨 [EXIT EXECUTED] {symbol} | Reason: {exit_reason} | Exit Premium: ₹{live_ltp:.2f}")
+                                logging.info(
+                                    f"🚨 [EXIT EXECUTED] {symbol} | Reason: {exit_reason} | "
+                                    f"Exit Price: ₹{live_ltp:.2f} | Realized PnL: {pnl_pct:+.2f}%"
+                                )
 
                     except Exception as e:
                         logging.error(f"❌ Exception fetching live LTP for {symbol}: {e}")
@@ -249,19 +321,20 @@ class AIFNOBot:
     def _continuous_eod_monitor(self):
         """🎯 EOD GUARD: Force-closes all open positions at 15:20 (3:20 PM) daily."""
         while True:
-            now = datetime.now()
+            now = datetime.utcnow() + timedelta(hours=5, minutes=30) # IST check
             if now.hour == 15 and now.minute >= 20:
                 try:
-                    conn = sqlite3.connect('trade_history.db', timeout=20.0)
+                    conn = self.db.get_connection()
                     cursor = conn.cursor()
                     cursor.execute("SELECT id, symbol FROM trades WHERE status='OPEN'")
                     open_trades = cursor.fetchall()
                     
                     if open_trades:
+                        ist_exit_time = now.strftime('%Y-%m-%d %H:%M:%S')
                         for trade in open_trades:
                             trade_id, symbol = trade
                             logging.info(f"🚨 [EOD SQUARE-OFF] Force closing intraday position: {symbol}")
-                            cursor.execute("UPDATE trades SET status=? WHERE id=?", ("CLOSED - EOD SQUARE OFF", trade_id))
+                            cursor.execute("UPDATE trades SET status=?, exit_time=? WHERE id=?", ("CLOSED - EOD SQUARE OFF", ist_exit_time, trade_id))
                             conn.commit()
                             time.sleep(0.5)
                     conn.close()
@@ -282,7 +355,6 @@ class AIFNOBot:
                 
             ltp = float(ltp_raw) / 100.0
             
-            # 🛑 STRICT NIFTY LOCK: Mapping
             symbol_map = {'26000': 'NIFTY'}
             symbol = symbol_map.get(token)
             
@@ -295,7 +367,6 @@ class AIFNOBot:
                     logging.info(f"💓 [HEARTBEAT] NIFTY @ {ltp:.2f} | Trades Today: {trades_today}/10")
                     self.last_heartbeat[symbol] = current_time
 
-                # Pass clean spot price to strategy
                 self.strategy.evaluate_tick(symbol=symbol, spot_price=ltp)
         except Exception as e:
             logging.error(f"❌ Error processing live data feed tick: {e}")
@@ -312,21 +383,17 @@ class AIFNOBot:
         logging.critical("🚨 [FATAL] Live WebSocket Connection closed.")
 
     def _on_error(self, ws, error, *args, **kwargs):
-        """Catches and handles WebSocket errors gracefully (like EOD disconnects) without crashing."""
         logging.warning(f"⚠️ [WEBSOCKET WARNING] Connection dropped or interrupted: {error}")
 
     def run(self):
         logging.info("Starting broker reconciliation...")
         
-        # ---------------------------------------------------------
-        # NEW CODE: Broker Synchronization
-        # ---------------------------------------------------------
         reconciler = TradeReconciler(smart_api=self.smart_api, db_path="trade_history.db")
         sync_success = reconciler.sync_open_positions()
         
         if not sync_success:
             logging.critical("🛑 Halting startup: Broker sync failed. Check API connection.")
-            return # Prevents the bot from starting blindly
+            return 
             
         logging.info("Launching core live WebSocket market data stream...")
         try:

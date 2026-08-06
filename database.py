@@ -1,29 +1,15 @@
 import sqlite3
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
-DB_PATH = 'trade_history.db'
-
-def get_connection(db_path=DB_PATH):
-    """
-    Returns a database connection with a 20.0-second timeout 
-    to prevent 'database is locked' errors during rapid live ticks.
-    """
-    conn = sqlite3.connect(db_path, timeout=20.0)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db(db_path=DB_PATH):
-    """
-    Initializes the database schema with all modern columns.
-    Includes both 'qty' and 'quantity' columns to prevent schema mismatch errors.
-    """
+def migrate_database_schema(db_path='trade_history.db'):
+    """Ensures the SQLite database schema has all columns and tables, auto-patching if needed."""
     try:
-        conn = get_connection(db_path)
+        conn = sqlite3.connect(db_path, timeout=20.0)
         cursor = conn.cursor()
-
-        # 1. Base table creation containing all columns used across the bot
-        cursor.execute('''
+        
+        # 1. Create main trades table if it doesn't exist
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS trades (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 entry_timestamp TEXT,
@@ -31,126 +17,126 @@ def init_db(db_path=DB_PATH):
                 symbol TEXT,
                 token TEXT,
                 action TEXT,
+                instrument_type TEXT,
                 quantity INTEGER,
-                qty INTEGER,
                 entry_price REAL,
+                target_price REAL,
+                stop_loss_price REAL,
                 exit_price REAL,
-                target_spot REAL,
-                stop_spot REAL,
                 status TEXT,
                 exit_reason TEXT,
-                type TEXT,
-                instrument_type TEXT,
-                strike REAL,
-                entry_spot REAL
+                entry_spot REAL,
+                peak_price REAL,
+                stop_spot REAL
             )
-        ''')
+        """)
 
-        # 2. Auto-migration check: ensure any pre-existing DB gets missing columns added dynamically
-        required_columns = [
-            ("entry_timestamp", "TEXT"),
-            ("exit_time", "TEXT"),
-            ("symbol", "TEXT"),
-            ("token", "TEXT"),
-            ("action", "TEXT"),
-            ("quantity", "INTEGER"),
-            ("qty", "INTEGER"),
-            ("entry_price", "REAL"),
-            ("exit_price", "REAL"),
-            ("target_spot", "REAL"),
-            ("stop_spot", "REAL"),
-            ("status", "TEXT"),
-            ("exit_reason", "TEXT"),
-            ("type", "TEXT"),
-            ("instrument_type", "TEXT"),
-            ("strike", "REAL"),
-            ("entry_spot", "REAL")
-        ]
-
+        # 2. Check and add missing columns dynamically to avoid mismatch errors
         cursor.execute("PRAGMA table_info(trades)")
-        existing_cols = [col[1] for col in cursor.fetchall()]
-
-        for col_name, col_type in required_columns:
-            if col_name not in existing_cols:
+        existing_columns = [col[1] for col in cursor.fetchall()]
+        
+        required_columns = {
+            'target_price': 'REAL',
+            'stop_loss_price': 'REAL',
+            'exit_price': 'REAL',
+            'exit_reason': 'TEXT',
+            'entry_spot': 'REAL',
+            'peak_price': 'REAL',
+            'stop_spot': 'REAL',
+            'instrument_type': 'TEXT'
+        }
+        
+        for col_name, col_type in required_columns.items():
+            if col_name not in existing_columns:
                 cursor.execute(f"ALTER TABLE trades ADD COLUMN {col_name} {col_type}")
-                logging.info(f"⚙️ Auto-Migration: Added missing column '{col_name}' to trades table.")
+                logging.info(f"🛠️ [DB MIGRATION] Added missing column '{col_name}' to trades table.")
+
+        # 3. Create study signals table for post-limit analysis
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS study_signals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                symbol TEXT,
+                instrument_type TEXT,
+                spot_price REAL,
+                reason TEXT
+            )
+        """)
 
         conn.commit()
         conn.close()
-        logging.info("✅ Database schema verified and fully aligned.")
+        logging.info("✅ Database schema verified and migrated successfully.")
     except Exception as e:
-        logging.error(f"❌ Database initialization error: {e}")
+        logging.error(f"❌ Database migration failed: {e}")
 
-def log_paper_order(symbol, token="", action="BUY", qty=65, quantity=65, entry_price=0.0, target_spot=0.0, stop_spot=0.0, instrument_type="CE", strike=0.0, entry_spot=0.0, db_path=DB_PATH):
-    """
-    Logs a paper trade into the SQLite database.
-    Guarantees lot size defaults to 65 if 0 is passed.
-    """
+class DatabaseManager:
+    """A lightweight bridge for managing database connections and logging."""
+    def __init__(self, db_path='trade_history.db'):
+        self.db_path = db_path
+        migrate_database_schema(self.db_path)
+        logging.info("✅ Local DatabaseManager initialized.")
+        
+    def get_connection(self):
+        return sqlite3.connect(self.db_path, check_same_thread=False, timeout=20.0)
+
+    def log_study_signal(self, symbol, spot_price, instrument_type, reason="STUDY_TRIGGER"):
+        """Logs post-limit signals for study/backtesting purposes without executing orders."""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            ist_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute("""
+                INSERT INTO study_signals (timestamp, symbol, instrument_type, spot_price, reason)
+                VALUES (?, ?, ?, ?, ?)
+            """, (ist_time, symbol, instrument_type, spot_price, reason))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logging.error(f"❌ Failed to log study signal: {e}")
+
+def log_paper_order(*args, **kwargs):
+    """Flexible paper order logger supporting both dictionary and keyword argument payloads."""
     try:
-        conn = get_connection(db_path)
+        db_path = kwargs.get('db_path', 'trade_history.db')
+        
+        if args and isinstance(args[0], dict):
+            d = args[0]
+            symbol = d.get('symbol')
+            token = d.get('token')
+            action = d.get('action', 'BUY')
+            inst_type = d.get('instrument_type', 'CE')
+            qty = d.get('quantity', 65)
+            entry_p = d.get('entry_price')
+            target_p = d.get('target_price')
+            sl_p = d.get('stop_loss_price')
+            spot = d.get('entry_spot', 0.0)
+        else:
+            symbol = kwargs.get('symbol')
+            token = kwargs.get('token')
+            action = kwargs.get('action', 'BUY')
+            inst_type = kwargs.get('instrument_type', 'CE')
+            qty = kwargs.get('quantity', 65)
+            entry_p = kwargs.get('entry_price')
+            target_p = kwargs.get('target_price')
+            sl_p = kwargs.get('stop_loss_price')
+            spot = kwargs.get('entry_spot', 0.0)
+
+        conn = sqlite3.connect(db_path, timeout=20.0)
         cursor = conn.cursor()
-        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Fallback logic to prevent Qty: 0
-        final_qty = qty if (qty and qty > 0) else (quantity if (quantity and quantity > 0) else 65)
-
-        cursor.execute('''
+        ist_time = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+        
+        cursor.execute("""
             INSERT INTO trades (
-                entry_timestamp, symbol, token, action, quantity, qty, entry_price,
-                target_spot, stop_spot, status, type, instrument_type, strike, entry_spot
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)
-        ''', (
-            now_str, symbol, str(token), action, final_qty, final_qty, entry_price,
-            target_spot, stop_spot, instrument_type, instrument_type, strike, entry_spot
+                entry_timestamp, symbol, token, action, instrument_type, 
+                quantity, entry_price, target_price, stop_loss_price, 
+                status, entry_spot, peak_price, stop_spot
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?)
+        """, (
+            ist_time, symbol, token, action, inst_type, 
+            qty, entry_p, target_p, sl_p, 
+            spot, entry_p, sl_p
         ))
-
-        trade_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        logging.info(f"💾 Trade #{trade_id} logged to DB for {symbol} | Strike: {strike} | Qty: {final_qty} | Entry: ₹{entry_price:.2f}")
-        return trade_id
     except Exception as e:
-        logging.error(f"❌ Failed to log paper order for {symbol}: {e}")
-        return None
-
-def close_trade(trade_id, exit_price, exit_reason, db_path=DB_PATH):
-    """
-    Updates an open trade with its exit price, exit time, and closure status.
-    """
-    try:
-        conn = get_connection(db_path)
-        cursor = conn.cursor()
-        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        cursor.execute('''
-            UPDATE trades
-            SET exit_price = ?, exit_time = ?, status = ?, exit_reason = ?
-            WHERE id = ?
-        ''', (exit_price, now_str, f"CLOSED - {exit_reason}", exit_reason, trade_id))
-
-        conn.commit()
-        conn.close()
-        logging.info(f"🔒 Trade #{trade_id} closed at ₹{exit_price:.2f} ({exit_reason})")
-        return True
-    except Exception as e:
-        logging.error(f"❌ Failed to close trade #{trade_id}: {e}")
-        return False
-
-def has_open_position(db_path=DB_PATH):
-    """
-    Checks if any trade currently has status='OPEN'.
-    """
-    try:
-        conn = get_connection(db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM trades WHERE status='OPEN'")
-        count = cursor.fetchone()[0]
-        conn.close()
-        return count > 0
-    except Exception as e:
-        logging.error(f"❌ Error checking open positions: {e}")
-        return True  # Return True as a safety measure to prevent duplicate orders on DB error
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    init_db()
+        logging.error(f"❌ Failed to log paper order to database: {e}")

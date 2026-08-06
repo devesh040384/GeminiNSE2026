@@ -1,82 +1,145 @@
-import datetime
 import logging
+from datetime import datetime
 
 class DynamicOptionsChainBuilder:
-    def __init__(self, smart_api=None, index_name=None, **kwargs):
+    def __init__(self, scrip_master_data=None, base_symbol="NIFTY", index_name=None, smart_api=None, **kwargs):
+        """
+        Initializes the options builder.
+        Supports index_name, base_symbol, smart_api, and arbitrary kwargs from main.py.
+        """
+        self.base_symbol = index_name if index_name else base_symbol
+        
+        if scrip_master_data is None:
+            scrip_master_data = kwargs.get('scrip_data') or kwargs.get('master_data') or kwargs.get('scrip_master')
+            
+        self.scrip_master_data = scrip_master_data
         self.smart_api = smart_api
-        self.index_name = index_name
-        self.scrip_master_data = []
+        self.nfo_contracts = []
+        
+        if self.scrip_master_data:
+            self.nfo_contracts = self._filter_nfo_contracts()
 
-    def load_scrip_master(self):
-        """Loads or fetches scrip master data if required during initialization."""
+    def load_scrip_master(self, scrip_master_data):
+        """
+        Method called by main.py to load or reload the scrip master data 
+        after the builder has been initialized.
+        """
+        self.scrip_master_data = scrip_master_data
+        if self.scrip_master_data:
+            self.nfo_contracts = self._filter_nfo_contracts()
+            logging.info(f"✅ Loaded {len(self.nfo_contracts)} NFO contracts for {self.base_symbol}.")
+
+    def _filter_nfo_contracts(self):
+        """Filters the master scrip data down to relevant NFO index/stock option contracts."""
+        if not self.scrip_master_data:
+            return []
+        contracts = []
+        for scrip in self.scrip_master_data:
+            if (scrip.get('exch_seg') == 'NFO' and 
+                scrip.get('name') == self.base_symbol and 
+                scrip.get('instrumenttype') in ['OPTIDX', 'OPTSTK']):
+                contracts.append(scrip)
+        return contracts
+
+    def get_nearest_expiry_contract(self, spot_price=None, instrument_type="CE", **kwargs):
+        """
+        Finds the closest At-The-Money (ATM) contract for the specified instrument type.
+        """
+        # Handle alternate keyword arguments
+        if spot_price is None:
+            spot_price = kwargs.get('spot') or kwargs.get('price') or kwargs.get('entry_spot')
+            
+        opt_type = kwargs.get('option_type') or kwargs.get('type') or kwargs.get('opt_type') or instrument_type
+        instrument_type = str(opt_type).upper()
+
         try:
-            logging.info(f"📁 Scrip master loader initialized for {self.index_name}")
-            return True
-        except Exception as e:
-            logging.error(f"❌ Failed to load scrip master: {e}")
-            return False
-
-    def get_nearest_expiry_contract(self, scrip_master_data, symbol, option_type, target_strike):
-        """
-        Filters the scrip master for valid option contracts matching the symbol, 
-        option type (CE/PE), and strike, ensuring the expiry date is >= Today.
-        """
-        if not scrip_master_data:
-            logging.error(f"❌ Scrip master data is empty or None for {symbol}. Cannot fetch options.")
+            spot_price = float(spot_price)
+        except (ValueError, TypeError):
+            logging.error(f"❌ Invalid spot price passed to Options Builder: {spot_price}")
             return None
 
-        today = datetime.date.today()
-        matching_contracts = []
-
-        for scrip in scrip_master_data:
-            if scrip.get('exch_seg') == 'NFO' or scrip.get('exch_seg') == 'BFO':
-                scrip_symbol = str(scrip.get('symbol', ''))
-                
-                if symbol in scrip_symbol and scrip_symbol.endswith(option_type):
-                    expiry_str = scrip.get('expiry')
-                    
-                    if expiry_str:
-                        try:
-                            expiry_date = self._parse_expiry_date(expiry_str)
-                            
-                            if expiry_date:
-                                # 🛡️ STRICT FIX: Exclude expired contracts (Expiry Date < Current Date)
-                                if expiry_date >= today:
-                                    strike_val = float(scrip.get('strike', 0.0)) / 100.0
-                                    
-                                    matching_contracts.append({
-                                        'token': scrip.get('token'),
-                                        'symbol': scrip_symbol,
-                                        'expiry_date': expiry_date,
-                                        'strike': strike_val,
-                                        'lotsize': scrip.get('lotsize', 1)
-                                    })
-                        except Exception:
-                            continue
-
-        if not matching_contracts:
-            logging.error(f"❌ No valid unexpired options found for {symbol} {option_type}")
+        if instrument_type not in ["CE", "PE"]:
+            logging.error(f"❌ Invalid instrument type: {instrument_type}. Must be 'CE' or 'PE'.")
             return None
 
-        # Sort by nearest future expiry date first
-        matching_contracts.sort(key=lambda x: x['expiry_date'])
-        nearest_expiry = matching_contracts[0]['expiry_date']
-        expiry_filtered = [c for c in matching_contracts if c['expiry_date'] == nearest_expiry]
-        
-        # Find closest strike
-        best_contract = min(expiry_filtered, key=lambda x: abs(x['strike'] - float(target_strike)))
-        
-        logging.info(f"✅ Selected Valid Contract: {best_contract['symbol']} | Expiry: {best_contract['expiry_date']} | Strike: {best_contract['strike']}")
-        return best_contract
+        # Re-filter contracts if list is empty but scrip_master_data is available
+        if not self.nfo_contracts and self.scrip_master_data:
+            self.nfo_contracts = self._filter_nfo_contracts()
 
-    def _parse_expiry_date(self, expiry_str):
-        """Helper to safely parse various broker date formats into a datetime.date object."""
-        for fmt in ('%d%b%Y', '%d-%b-%Y', '%Y-%m-%d', '%d%m%Y'):
+        # 1. Filter by Instrument Type (symbol ends with CE or PE)
+        type_filtered = [
+            c for c in self.nfo_contracts 
+            if c.get('symbol', '').endswith(instrument_type)
+        ]
+        
+        if not type_filtered:
+            logging.error(f"❌ No {instrument_type} contracts found for {self.base_symbol} in scrip master.")
+            return None
+
+        # 2. Extract and Parse Valid Future Expiry Dates
+        valid_expiries = set()
+        for c in type_filtered:
+            expiry_str = c.get('expiry')
+            if expiry_str:
+                try:
+                    expiry_date = datetime.strptime(expiry_str, '%d%b%Y').date()
+                    valid_expiries.add((expiry_date, expiry_str))
+                except ValueError:
+                    continue
+
+        if not valid_expiries:
+            logging.error("❌ Could not parse expiry dates from scrip master.")
+            return None
+
+        # Select the closest non-expired date
+        today = datetime.now().date()
+        future_expiries = sorted([e for e in valid_expiries if e[0] >= today], key=lambda x: x[0])
+        
+        if not future_expiries:
+            logging.error("❌ No valid future expiries found in scrip master.")
+            return None
+            
+        nearest_expiry_str = future_expiries[0][1]
+
+        # 3. Filter Contracts by Nearest Expiry
+        expiry_filtered = [c for c in type_filtered if c.get('expiry') == nearest_expiry_str]
+
+        # 4. Find the At-The-Money (ATM) Strike
+        atm_contract = None
+        min_diff = float('inf')
+
+        for contract in expiry_filtered:
             try:
-                return datetime.datetime.strptime(expiry_str.strip(), fmt).date()
-            except ValueError:
+                raw_strike = float(contract.get('strike', 0))
+                # Scale strike if multiplied by 100 in master data
+                actual_strike = raw_strike / 100.0 if raw_strike > 100000 else raw_strike
+            except (ValueError, TypeError):
                 continue
+            
+            diff = abs(actual_strike - spot_price)
+            if diff < min_diff:
+                min_diff = diff
+                atm_contract = contract
+                atm_contract['parsed_strike'] = actual_strike
+
+        if atm_contract:
+            return {
+                'symbol': atm_contract.get('symbol'),
+                'token': atm_contract.get('token'),
+                'strike': atm_contract.get('parsed_strike'),
+                'expiry': nearest_expiry_str
+            }
+            
+        logging.error(f"❌ Failed to locate ATM contract for {self.base_symbol} {instrument_type} @ {spot_price}")
         return None
 
-# Alias to maintain compatibility if anything imports OptionsChainBuilder directly
-OptionsChainBuilder = DynamicOptionsChainBuilder
+    def build_options_chain(self, spot_price=None, instrument_type="CE", **kwargs):
+        """Alias method for backward compatibility."""
+        return self.get_nearest_expiry_contract(spot_price, instrument_type, **kwargs)
+
+    def get_atm_contract(self, spot_price=None, instrument_type="CE", **kwargs):
+        """Alias method for backward compatibility."""
+        return self.get_nearest_expiry_contract(spot_price, instrument_type, **kwargs)
+
+# Backward-compatibility alias
+OptionsBuilder = DynamicOptionsChainBuilder
