@@ -1,145 +1,141 @@
 import logging
+import json
+import os
 from datetime import datetime
+from config import INDICES_CONFIG
 
 class DynamicOptionsChainBuilder:
-    def __init__(self, scrip_master_data=None, base_symbol="NIFTY", index_name=None, smart_api=None, **kwargs):
-        """
-        Initializes the options builder.
-        Supports index_name, base_symbol, smart_api, and arbitrary kwargs from main.py.
-        """
-        self.base_symbol = index_name if index_name else base_symbol
-        
-        if scrip_master_data is None:
-            scrip_master_data = kwargs.get('scrip_data') or kwargs.get('master_data') or kwargs.get('scrip_master')
-            
-        self.scrip_master_data = scrip_master_data
+    def __init__(self, index_name="NIFTY", smart_api=None):
+        self.index_name = index_name.upper()
         self.smart_api = smart_api
         self.nfo_contracts = []
-        
-        if self.scrip_master_data:
-            self.nfo_contracts = self._filter_nfo_contracts()
+        self.scrip_master_data = []
 
-    def load_scrip_master(self, scrip_master_data):
-        """
-        Method called by main.py to load or reload the scrip master data 
-        after the builder has been initialized.
-        """
-        self.scrip_master_data = scrip_master_data
-        if self.scrip_master_data:
-            self.nfo_contracts = self._filter_nfo_contracts()
-            logging.info(f"✅ Loaded {len(self.nfo_contracts)} NFO contracts for {self.base_symbol}.")
-
-    def _filter_nfo_contracts(self):
-        """Filters the master scrip data down to relevant NFO index/stock option contracts."""
-        if not self.scrip_master_data:
-            return []
-        contracts = []
-        for scrip in self.scrip_master_data:
-            if (scrip.get('exch_seg') == 'NFO' and 
-                scrip.get('name') == self.base_symbol and 
-                scrip.get('instrumenttype') in ['OPTIDX', 'OPTSTK']):
-                contracts.append(scrip)
-        return contracts
-
-    def get_nearest_expiry_contract(self, spot_price=None, instrument_type="CE", **kwargs):
-        """
-        Finds the closest At-The-Money (ATM) contract for the specified instrument type.
-        """
-        # Handle alternate keyword arguments
-        if spot_price is None:
-            spot_price = kwargs.get('spot') or kwargs.get('price') or kwargs.get('entry_spot')
-            
-        opt_type = kwargs.get('option_type') or kwargs.get('type') or kwargs.get('opt_type') or instrument_type
-        instrument_type = str(opt_type).upper()
-
+    def load_scrip_master(self, scrip_data=None):
         try:
-            spot_price = float(spot_price)
-        except (ValueError, TypeError):
-            logging.error(f"❌ Invalid spot price passed to Options Builder: {spot_price}")
-            return None
+            if scrip_data:
+                self.scrip_master_data = scrip_data
+            elif os.path.exists('scrip_master.json'):
+                with open('scrip_master.json', 'r', encoding='utf-8') as f:
+                    self.scrip_master_data = json.load(f)
+            
+            self.nfo_contracts = []
+            for item in self.scrip_master_data:
+                sym = item.get('symbol', '').upper()
+                if self.index_name in sym and item.get('instrumenttype', '') in ['OPTIDX', 'OPTSTK']:
+                    self.nfo_contracts.append(item)
+                    
+            logging.info(f"🔗 [ChainBuilder-{self.index_name}] Loaded {len(self.nfo_contracts)} derivative contracts from master.")
+        except Exception as e:
+            logging.error(f"❌ Error loading scrip master for {self.index_name}: {e}")
 
-        if instrument_type not in ["CE", "PE"]:
-            logging.error(f"❌ Invalid instrument type: {instrument_type}. Must be 'CE' or 'PE'.")
-            return None
+    def get_nearest_expiry_contract(self, spot_price, instrument_type="CE"):
+        """Finds the nearest ATM option contract with strict liquidity and bid-ask spread validation."""
+        try:
+            if not self.nfo_contracts:
+                self.load_scrip_master()
+                if not self.nfo_contracts:
+                    return None
 
-        # Re-filter contracts if list is empty but scrip_master_data is available
-        if not self.nfo_contracts and self.scrip_master_data:
-            self.nfo_contracts = self._filter_nfo_contracts()
+            valid_contracts = []
+            today = datetime.now()
+            
+            for c in self.nfo_contracts:
+                exp_str = c.get('expiry')
+                if not exp_str: continue
+                
+                parsed_date = None
+                for fmt in ('%d-%b-%Y', '%d%b%Y', '%Y-%m-%d', '%d-%b-%y'):
+                    try:
+                        parsed_date = datetime.strptime(exp_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+                
+                if parsed_date and parsed_date >= today.replace(hour=0, minute=0, second=0, microsecond=0):
+                    c['parsed_expiry_date'] = parsed_date
+                    valid_contracts.append(c)
 
-        # 1. Filter by Instrument Type (symbol ends with CE or PE)
-        type_filtered = [
-            c for c in self.nfo_contracts 
-            if c.get('symbol', '').endswith(instrument_type)
-        ]
-        
-        if not type_filtered:
-            logging.error(f"❌ No {instrument_type} contracts found for {self.base_symbol} in scrip master.")
-            return None
+            if not valid_contracts:
+                return None
 
-        # 2. Extract and Parse Valid Future Expiry Dates
-        valid_expiries = set()
-        for c in type_filtered:
-            expiry_str = c.get('expiry')
-            if expiry_str:
+            earliest_expiry_date = min(valid_contracts, key=lambda x: x['parsed_expiry_date'])['parsed_expiry_date']
+            
+            matching_contracts = []
+            for c in valid_contracts:
+                if c['parsed_expiry_date'] == earliest_expiry_date:
+                    sym = c.get('symbol', '').upper()
+                    if sym.endswith(instrument_type.upper()):
+                        try:
+                            raw_strike = float(c.get('strike', 0))
+                            actual_strike = raw_strike / 100.0 if raw_strike > 100000 else raw_strike
+                            c['parsed_strike'] = actual_strike
+                            matching_contracts.append(c)
+                        except ValueError:
+                            continue
+
+            if not matching_contracts:
+                return None
+
+            sorted_candidates = sorted(matching_contracts, key=lambda x: abs(x['parsed_strike'] - spot_price))
+
+            for candidate in sorted_candidates[:5]:
+                contract_symbol = candidate.get('symbol')
+                contract_token = candidate.get('token') or candidate.get('symboltoken')
+                
+                if not self.smart_api:
+                    return {
+                        'symbol': contract_symbol,
+                        'token': contract_token,
+                        'strike': candidate['parsed_strike'],
+                        'expiry': earliest_expiry_date.strftime('%d%b%Y').upper()
+                    }
+
                 try:
-                    expiry_date = datetime.strptime(expiry_str, '%d%b%Y').date()
-                    valid_expiries.add((expiry_date, expiry_str))
-                except ValueError:
-                    continue
+                    # Dynamically resolve exchange segment from config (NFO for Nifty/BankNifty, BFO for Sensex)
+                    cfg = INDICES_CONFIG.get(self.index_name, {})
+                    exchange = cfg.get("exchange", "NFO")
+                    
+                    resp = self.smart_api.ltpData(exchange, contract_symbol, contract_token)
+                    if resp and resp.get('status'):
+                        data = resp.get('data', {})
+                        ltp = float(data.get('ltp', 0) if hasattr(data, 'get') else 0)
+                        
+                        q_resp = self.smart_api.getMarketData(mode="FULL", exchangeTokens={exchange: [contract_token]})
+                        if q_resp and q_resp.get('status'):
+                            q_data = q_resp['data'].get('fetched', [{}])[0]
+                            volume = float(q_data.get('tradeVolume', 10000))
+                            best_bid = float(q_data.get('bestBidPrice', ltp * 0.99))
+                            best_ask = float(q_data.get('bestAskPrice', ltp * 1.01))
+                            
+                            spread_pct = ((best_ask - best_bid) / ltp) * 100 if ltp > 0 else 0.0
+                            
+                            if volume >= 500 and spread_pct <= 1.5:
+                                logging.info(f"✅ [LIQUIDITY PASSED] {contract_symbol} | Vol: {volume} | Spread: {spread_pct:.2f}%")
+                                return {
+                                    'symbol': contract_symbol,
+                                    'token': contract_token,
+                                    'strike': candidate['parsed_strike'],
+                                    'expiry': earliest_expiry_date.strftime('%d%b%Y').upper()
+                                }
+                            else:
+                                logging.warning(f"⚠️ [LIQUIDITY REJECTED] {contract_symbol} (Vol: {volume}, Spread: {spread_pct:.2f}%) -> Skipping strike.")
+                except Exception as ex:
+                    logging.warning(f"⚠️ Could not verify live depth for {contract_symbol}: {ex}")
+                    return {
+                        'symbol': contract_symbol,
+                        'token': contract_token,
+                        'strike': candidate['parsed_strike'],
+                        'expiry': earliest_expiry_date.strftime('%d%b%Y').upper()
+                    }
 
-        if not valid_expiries:
-            logging.error("❌ Could not parse expiry dates from scrip master.")
-            return None
-
-        # Select the closest non-expired date
-        today = datetime.now().date()
-        future_expiries = sorted([e for e in valid_expiries if e[0] >= today], key=lambda x: x[0])
-        
-        if not future_expiries:
-            logging.error("❌ No valid future expiries found in scrip master.")
-            return None
-            
-        nearest_expiry_str = future_expiries[0][1]
-
-        # 3. Filter Contracts by Nearest Expiry
-        expiry_filtered = [c for c in type_filtered if c.get('expiry') == nearest_expiry_str]
-
-        # 4. Find the At-The-Money (ATM) Strike
-        atm_contract = None
-        min_diff = float('inf')
-
-        for contract in expiry_filtered:
-            try:
-                raw_strike = float(contract.get('strike', 0))
-                # Scale strike if multiplied by 100 in master data
-                actual_strike = raw_strike / 100.0 if raw_strike > 100000 else raw_strike
-            except (ValueError, TypeError):
-                continue
-            
-            diff = abs(actual_strike - spot_price)
-            if diff < min_diff:
-                min_diff = diff
-                atm_contract = contract
-                atm_contract['parsed_strike'] = actual_strike
-
-        if atm_contract:
+            fallback = sorted_candidates[0]
             return {
-                'symbol': atm_contract.get('symbol'),
-                'token': atm_contract.get('token'),
-                'strike': atm_contract.get('parsed_strike'),
-                'expiry': nearest_expiry_str
+                'symbol': fallback.get('symbol'),
+                'token': fallback.get('token') or fallback.get('symboltoken'),
+                'strike': fallback['parsed_strike'],
+                'expiry': earliest_expiry_date.strftime('%d%b%Y').upper()
             }
-            
-        logging.error(f"❌ Failed to locate ATM contract for {self.base_symbol} {instrument_type} @ {spot_price}")
-        return None
-
-    def build_options_chain(self, spot_price=None, instrument_type="CE", **kwargs):
-        """Alias method for backward compatibility."""
-        return self.get_nearest_expiry_contract(spot_price, instrument_type, **kwargs)
-
-    def get_atm_contract(self, spot_price=None, instrument_type="CE", **kwargs):
-        """Alias method for backward compatibility."""
-        return self.get_nearest_expiry_contract(spot_price, instrument_type, **kwargs)
-
-# Backward-compatibility alias
-OptionsBuilder = DynamicOptionsChainBuilder
+        except Exception as e:
+            logging.error(f"❌ Error getting validated liquidity contract for {self.index_name}: {e}")
+            return None

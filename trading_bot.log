@@ -1,0 +1,220 @@
+2026-08-07 16:18:58,341 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:18:58,342 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:18:58,342 - ERROR - ❌ Missing broker credentials in .env file.
+2026-08-07 16:18:58,800 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:18:58,800 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:18:58,839 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:18:58,839 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:18:58,840 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:18:58,840 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:18:58,840 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:18:58,840 - WARNING - ⚠️ Running without active broker SmartAPI connection.
+2026-08-07 16:21:33,045 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:21:33,046 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:21:33,137 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:21:33,589 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:21:33,590 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:21:33,629 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:21:33,629 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:21:33,630 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:21:33,630 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:21:33,630 - INFO - Starting broker reconciliation...
+2026-08-07 16:21:33,666 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
+2026-08-07 16:21:33,667 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:21:33,667 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:21:33,668 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
+Traceback (most recent call last):
+  File "/home/ec2-user/AI_FNOBot/main.py", line 173, in <module>
+    main()
+  File "/home/ec2-user/AI_FNOBot/main.py", line 126, in main
+    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
+TypeError: __init__() missing 1 required positional argument: 'feed_token'
+2026-08-07 16:22:36,573 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:22:36,574 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:22:36,666 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:22:37,127 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:22:37,127 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:22:37,166 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:22:37,167 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:22:37,167 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:22:37,167 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:22:37,167 - INFO - Starting broker reconciliation...
+2026-08-07 16:22:37,201 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
+2026-08-07 16:22:37,202 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:22:37,202 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:22:37,202 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:22:37,202 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
+Traceback (most recent call last):
+  File "/home/ec2-user/AI_FNOBot/main.py", line 181, in <module>
+    main()
+  File "/home/ec2-user/AI_FNOBot/main.py", line 134, in main
+    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
+TypeError: __init__() missing 1 required positional argument: 'feed_token'
+2026-08-07 16:23:33,492 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:23:33,493 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:23:33,585 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:23:34,041 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:23:34,042 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:23:34,082 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:23:34,082 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:23:34,082 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:23:34,082 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:23:34,083 - INFO - Starting broker reconciliation...
+2026-08-07 16:23:34,114 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
+2026-08-07 16:23:34,114 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:23:34,114 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:23:34,115 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:23:34,115 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
+Traceback (most recent call last):
+  File "/home/ec2-user/AI_FNOBot/main.py", line 188, in <module>
+    main()
+  File "/home/ec2-user/AI_FNOBot/main.py", line 141, in main
+    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
+TypeError: __init__() missing 1 required positional argument: 'feed_token'
+2026-08-07 16:25:25,082 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:25:25,082 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:25:25,182 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:25:25,645 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:25:25,645 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:25:25,685 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:25:25,685 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:25:25,686 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:25:25,686 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:25:25,686 - INFO - Starting broker reconciliation...
+2026-08-07 16:25:25,719 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
+2026-08-07 16:25:25,720 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:25:25,720 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:25:25,720 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:25:25,720 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
+Traceback (most recent call last):
+  File "/home/ec2-user/AI_FNOBot/main.py", line 188, in <module>
+    main()
+  File "/home/ec2-user/AI_FNOBot/main.py", line 141, in main
+    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
+TypeError: __init__() missing 1 required positional argument: 'feed_token'
+2026-08-07 16:27:44,231 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:27:44,231 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:27:44,326 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:27:44,787 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:27:44,788 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:27:44,827 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:27:44,827 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:27:44,828 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:27:44,828 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:27:44,828 - INFO - Starting broker reconciliation...
+2026-08-07 16:27:44,863 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
+2026-08-07 16:27:44,864 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:27:44,864 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:27:44,864 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:27:44,865 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 16:27:45,060 - INFO - Websocket connected
+2026-08-07 16:27:45,060 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 16:27:45,061 - INFO - 📡 Subscribed to indices: ['NIFTY']
+2026-08-07 16:30:06,399 - INFO - tearing down on exception 
+2026-08-07 16:30:06,404 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7fd9760fe730>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 16:30:06,404 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-07 16:30:25,638 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:30:25,639 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:30:25,728 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:30:26,190 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:30:26,190 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:30:26,230 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:30:26,230 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:30:26,230 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:30:26,231 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:30:26,231 - INFO - Starting broker reconciliation...
+2026-08-07 16:30:26,265 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:30:26,265 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:30:26,266 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:30:26,266 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 16:30:26,281 - INFO - Websocket connected
+2026-08-07 16:30:26,281 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 16:30:26,281 - INFO - 📡 Subscribed to indices: ['NIFTY']
+2026-08-07 16:33:10,153 - INFO - tearing down on exception 
+2026-08-07 16:33:10,157 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f16a263e730>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 16:33:10,157 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-07 16:33:34,247 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
+2026-08-07 16:33:34,248 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:33:34,341 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:33:34,802 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:33:34,802 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:33:34,841 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:33:34,841 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:33:34,842 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:33:34,842 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:33:34,842 - INFO - Starting broker reconciliation...
+2026-08-07 16:33:34,874 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:33:34,875 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:33:34,875 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:33:34,876 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 16:33:34,891 - INFO - Websocket connected
+2026-08-07 16:33:34,891 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 16:33:34,892 - INFO - 📡 Subscribed to indices: ['NIFTY']
+2026-08-07 16:33:56,346 - INFO - tearing down on exception 
+2026-08-07 16:33:56,349 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f69c8ed6d30>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 16:33:56,349 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-07 16:39:27,013 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'BANKNIFTY', 'SENSEX']
+2026-08-07 16:39:27,013 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 16:39:27,104 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 16:39:27,562 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 16:39:27,563 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 16:39:27,602 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 16:39:27,641 - INFO - 🔗 [ChainBuilder-BANKNIFTY] Loaded 1044 derivative contracts from master.
+2026-08-07 16:39:27,680 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-07 16:39:27,681 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 16:39:27,681 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 16:39:27,681 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 16:39:27,681 - INFO - Starting broker reconciliation...
+2026-08-07 16:39:27,714 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 16:39:27,715 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 16:39:27,715 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 16:39:27,716 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 16:39:27,734 - INFO - Websocket connected
+2026-08-07 16:39:27,734 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 16:39:27,735 - INFO - 📡 Subscribed to indices: ['NIFTY', 'BANKNIFTY', 'SENSEX']
+2026-08-07 16:42:32,548 - INFO - tearing down on exception 
+2026-08-07 16:42:32,553 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7ff8a1bae0a0>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 16:42:32,553 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-07 18:26:55,299 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'BANKNIFTY', 'SENSEX']
+2026-08-07 18:26:55,301 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 18:26:55,392 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 18:26:55,924 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 18:26:55,924 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 18:26:55,963 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 18:26:56,001 - INFO - 🔗 [ChainBuilder-BANKNIFTY] Loaded 1044 derivative contracts from master.
+2026-08-07 18:26:56,040 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-07 18:26:56,041 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 18:26:56,042 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 18:26:56,042 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 18:26:56,042 - INFO - Starting broker reconciliation...
+2026-08-07 18:26:56,075 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 18:26:56,076 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 18:26:56,077 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 18:26:56,078 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 18:26:56,095 - INFO - Websocket connected
+2026-08-07 18:26:56,095 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 18:26:56,096 - INFO - 📡 Subscribed to indices: ['NIFTY', 'BANKNIFTY', 'SENSEX']
+2026-08-07 18:27:02,120 - INFO - tearing down on exception 
+2026-08-07 18:27:02,124 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f9ea9a88b20>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 18:27:02,124 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-07 18:27:26,069 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
+2026-08-07 18:27:26,070 - INFO - ✅ Local DatabaseManager initialized cleanly.
+2026-08-07 18:27:26,162 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-07 18:27:26,614 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-07 18:27:26,614 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
+2026-08-07 18:27:26,653 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-07 18:27:26,692 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-07 18:27:26,692 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
+2026-08-07 18:27:26,693 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-07 18:27:26,693 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-07 18:27:26,693 - INFO - Starting broker reconciliation...
+2026-08-07 18:27:26,733 - INFO - ✅ Broker reconciliation complete.
+2026-08-07 18:27:26,733 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-07 18:27:26,734 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-07 18:27:26,734 - INFO - Launching core live WebSocket market data stream...
+2026-08-07 18:27:26,750 - INFO - Websocket connected
+2026-08-07 18:27:26,750 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-07 18:27:26,751 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX']
+2026-08-07 18:27:33,625 - INFO - tearing down on exception 
+2026-08-07 18:27:33,629 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f4926683070>>: _on_close() takes 2 positional arguments but 4 were given
+2026-08-07 18:27:33,630 - ERROR - ❌ WebSocket Error: Connection closed
