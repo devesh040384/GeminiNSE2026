@@ -92,9 +92,8 @@ class DynamicOptionsChainBuilder:
                     }
 
                 try:
-                    # Dynamically resolve exchange segment from config (NFO for Nifty/BankNifty, BFO for Sensex)
-                    cfg = INDICES_CONFIG.get(self.index_name, {})
-                    exchange = cfg.get("exchange", "NFO")
+                    # ✅ FIXED: Strict exchange routing for Options (NFO for Nifty, BFO for Sensex)
+                    exchange = "BFO" if self.index_name == "SENSEX" else "NFO"
                     
                     resp = self.smart_api.ltpData(exchange, contract_symbol, contract_token)
                     if resp and resp.get('status'):

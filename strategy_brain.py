@@ -1,255 +1,267 @@
-import logging
 import time
-import collections
-import pandas as pd
-from datetime import datetime, timedelta
 import json
 import os
+import logging
+from datetime import datetime, timedelta
 from config import INDICES_CONFIG
-from indicators import TechnicalIndicators
 
 class StrategyBrain:
-    def __init__(self, order_engine, options_builders, scrip_master_data=None):
-        self.order_engine = order_engine
-        self.options_builders = options_builders
-        self.scrip_master_data = scrip_master_data
+    def __init__(self, order_manager=None, order_engine=None, **kwargs):
+        self.order_manager = order_manager or order_engine
+        self.options_builders = kwargs.get("options_builders", {})
         
-        self.price_histories = {symbol: collections.deque(maxlen=60) for symbol in INDICES_CONFIG.keys()}
+        self.price_histories = {symbol: [] for symbol in INDICES_CONFIG.keys()}
+        self.rsi_histories = {symbol: [] for symbol in INDICES_CONFIG.keys()}
+        self.last_candle_times = {symbol: 0.0 for symbol in INDICES_CONFIG.keys()}
+        self._last_debug_logs = {symbol: 0.0 for symbol in INDICES_CONFIG.keys()}
+        self._last_rsi_logs = {symbol: 0.0 for symbol in INDICES_CONFIG.keys()}
+        self.cooldown_until = {symbol: 0.0 for symbol in INDICES_CONFIG.keys()}
         self.last_arsis = {symbol: 50.0 for symbol in INDICES_CONFIG.keys()}
+        self.current_regimes = {symbol: "INITIALIZING" for symbol in INDICES_CONFIG.keys()}
         
-        self.last_candle_time = time.time()
-        self._last_debug_log = 0
-        self._last_rsi_log = 0
+        self.circuit_breaker_tripped = False
         
-        self.cooldown_until = {} 
-        self.contract_cooldowns = {} 
         self.state_file = "rsi_state.json"
         self._load_state()
+
+    def _calculate_rsi(self, prices, period=14):
+        if len(prices) < period + 1:
+            return 50.0
+        gains = []
+        losses = []
+        for i in range(1, len(prices)):
+            change = prices[i] - prices[i-1]
+            if change > 0:
+                gains.append(change)
+                losses.append(0)
+            else:
+                gains.append(0)
+                losses.append(abs(change))
+        
+        avg_gain = sum(gains[-period:]) / period
+        avg_loss = sum(losses[-period:]) / period
+        
+        if avg_gain == 0 and avg_loss == 0: return 50.0
+        if avg_loss == 0: return 100.0
+            
+        rs = avg_gain / avg_loss
+        return 100 - (100 / (1 + rs))
+
+    def _calculate_ema(self, history, period):
+        if len(history) < period:
+            return sum(history) / len(history) if history else 0.0
+        multiplier = 2 / (period + 1)
+        ema = sum(history[:period]) / period
+        for price in history[period:]:
+            ema = (price - ema) * multiplier + ema
+        return ema
+
+    def _save_state(self):
+        try:
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            with open(self.state_file, "w") as f:
+                json.dump({
+                    "date": today_str,
+                    "price_histories": self.price_histories,
+                    "last_arsis": self.last_arsis,
+                    "last_candle_times": self.last_candle_times
+                }, f)
+        except Exception as e:
+            logging.error(f"❌ Error saving StrategyBrain state: {e}")
 
     def _load_state(self):
         if os.path.exists(self.state_file):
             try:
-                with open(self.state_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    saved_history = data.get('price_histories', {})
-                    for sym, hist in saved_history.items():
-                        if sym in self.price_histories:
-                            self.price_histories[sym].extend(hist)
-                    self.last_arsis = data.get('last_arsis', self.last_arsis)
-                    
-                    saved_cooldowns = data.get('contract_cooldowns', {})
-                    current_time = time.time()
-                    self.contract_cooldowns = {sym: expiry for sym, expiry in saved_cooldowns.items() if expiry > current_time}
-                    
-                logging.info(f"💾 [STATE RECOVERED] Active Strike Cooldowns: {len(self.contract_cooldowns)}")
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                with open(self.state_file, "r") as f:
+                    state = json.load(f)
+                    if state.get("date", "") == today_str:
+                        loaded_histories = state.get("price_histories", {})
+                        for symbol in INDICES_CONFIG.keys():
+                            if symbol in loaded_histories:
+                                self.price_histories[symbol] = loaded_histories[symbol]
+                        self.last_arsis = state.get("last_arsis", self.last_arsis)
+                        self.last_candle_times = state.get("last_candle_times", self.last_candle_times)
             except Exception as e:
-                logging.error(f"❌ Failed to load state: {e}")
+                logging.error(f"❌ Error loading StrategyBrain state: {e}")
 
-    def _save_state(self):
+    def _check_circuit_breaker(self):
+        if self.circuit_breaker_tripped: return True
         try:
-            data = {
-                'price_histories': {sym: list(hist) for sym, hist in self.price_histories.items()}, 
-                'last_arsis': self.last_arsis,
-                'contract_cooldowns': self.contract_cooldowns
-            }
-            with open(self.state_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f)
-        except Exception as e:
-            logging.error(f"❌ Failed to save state: {e}")
-
-    def _calculate_rsi(self, prices, period=14):
-        """Delegates to modular TechnicalIndicators for robust RSI computation."""
-        return TechnicalIndicators.calculate_rsi(list(prices), period=period)
-
-    def _calculate_atr(self, prices, period=14):
-        """Calculates ATR using rolling pseudo highs/lows from historical spot prices."""
-        if len(prices) < period + 1:
-            return 0.0
-        p_list = list(prices)
-        highs = [p + 2.0 for p in p_list]
-        lows = [p - 2.0 for p in p_list]
-        return TechnicalIndicators.calculate_atr(highs, lows, p_list, period=period)
-
-    def _calculate_supertrend(self, prices, period=10, multiplier=3.0):
-        if len(prices) < period + 5:
-            return "NEUTRAL"
-        try:
-            df = pd.DataFrame({'close': list(prices)})
-            df['high'] = df['close'] + 2.0 
-            df['low'] = df['close'] - 2.0
+            import sqlite3
+            conn = sqlite3.connect('trade_history.db')
+            cursor = conn.cursor()
+            today = datetime.now().strftime("%Y-%m-%d")
             
-            df['tr1'] = df['high'] - df['low']
-            df['tr2'] = abs(df['high'] - df['close'].shift(1))
-            df['tr3'] = abs(df['low'] - df['close'].shift(1))
-            df['tr'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
-            df['atr'] = df['tr'].rolling(window=period).mean()
+            # FIX: Removed 'qty' from SELECT query
+            cursor.execute('''
+                SELECT symbol, entry_price, exit_price 
+                FROM trades 
+                WHERE status = 'CLOSED' AND entry_time LIKE ? 
+                ORDER BY exit_time ASC
+            ''', (f"{today}%",))
             
-            hl2 = (df['high'] + df['low']) / 2
-            df['upperband'] = hl2 + (multiplier * df['atr'])
-            df['lowerband'] = hl2 - (multiplier * df['atr'])
+            trades = cursor.fetchall()
+            conn.close()
             
-            current_close = df['close'].iloc[-1]
-            current_sma = df['close'].rolling(window=period).mean().iloc[-1]
+            daily_pnl = 0.0
+            consecutive_losses = 0
             
-            return "BULLISH" if current_close > current_sma else "BEARISH"
-        except Exception:
-            return "NEUTRAL"
-
-    def _detect_market_regime(self, symbol, history):
-        config = INDICES_CONFIG.get(symbol, INDICES_CONFIG["NIFTY"])
-        threshold = config["choppy_range_threshold"]
-        
-        if len(history) < 30:
-            return "TRENDING"
-        
-        s = pd.Series(list(history))
-        recent_range = s.tail(30).max() - s.tail(30).min()
-        
-        if recent_range < threshold:
-            return "CHOPPY"
-        return "TRENDING"
-
-    def _get_live_pcr(self, symbol, spot_price):
-        try:
-            if not getattr(self.order_engine, 'smart_api', None):
-                return None
-            config = INDICES_CONFIG.get(symbol, {})
-            token = config.get("index_token")
-            builder = self.options_builders.get(token)
-            if not builder: return None
-            
-            atm = builder.get_nearest_expiry_contract(spot_price, "CE")
-            if not atm: return None
-            nearest_expiry = atm['expiry']
-            atm_strike = float(atm['strike'])
-            
-            ce_tokens, pe_tokens = [], []
-            min_strike, max_strike = atm_strike - 500, atm_strike + 500
-            
-            for c in builder.nfo_contracts:
-                if c.get('expiry') == nearest_expiry:
-                    raw_s = float(c.get('strike', 0))
-                    actual_s = raw_s / 100.0 if raw_s > 100000 else raw_s
-                    if min_strike <= actual_s <= max_strike:
-                        if c.get('symbol', '').endswith('CE'): ce_tokens.append(c['token'])
-                        elif c.get('symbol', '').endswith('PE'): pe_tokens.append(c['token'])
-            
-            all_tokens = ce_tokens + pe_tokens
-            if not all_tokens: return None
-            
-            exchange = config.get("exchange", "NFO")
-            response = self.order_engine.smart_api.marketData({"mode": "FULL", "exchangeTokens": {exchange: all_tokens}})
-            if not response or not response.get('status') or 'data' not in response:
-                return None
-            
-            data = response['data']
-            fetched_data = data.get('fetched', data) if isinstance(data, dict) else data
-            
-            total_ce_oi, total_pe_oi = 0, 0
-            for item in fetched_data:
-                t = item.get('exchangeToken')
-                oi = item.get('opnInterest', 0)
-                if t in ce_tokens: total_ce_oi += oi
-                elif t in pe_tokens: total_pe_oi += oi
+            for trade in trades:
+                sym, entry, exit_p = trade
+                # FIX: Calculate qty dynamically
+                actual_qty = 25 if "NIFTY" in sym.upper() else 10
                 
-            if total_ce_oi == 0: return None
-            return total_pe_oi / total_ce_oi
+                pnl = (exit_p - entry) * actual_qty
+                daily_pnl += pnl
+                
+                if pnl < 0:
+                    consecutive_losses += 1
+                else:
+                    consecutive_losses = 0
+                    
+            if daily_pnl <= -2000.00:
+                logging.critical(f"🛑 CIRCUIT BREAKER! Daily Loss (₹{daily_pnl:.2f}) hit. Halting entries.")
+                self.circuit_breaker_tripped = True
+                return True
+            if consecutive_losses >= 5:
+                logging.critical(f"🛑 CIRCUIT BREAKER! 5 consecutive losses. Market toxic. Halting entries.")
+                self.circuit_breaker_tripped = True
+                return True
+            return False
+        except Exception as e:
+            logging.error(f"⚠️ Error checking circuit breaker: {e}")
+            return False
+
+    def _trigger_entry(self, symbol, spot_price, option_type, target_mult, sl_mult):
+        try:
+            if self._check_circuit_breaker(): return False
+            if not self.order_manager: return False
+
+            config = INDICES_CONFIG.get(symbol, {})
+            index_token = str(config.get("index_token"))
+            
+            builder = self.options_builders.get(index_token)
+            if not builder: return False
+
+            contract = builder.get_nearest_expiry_contract(spot_price, instrument_type=option_type)
+            if not contract: return False
+
+            opt_symbol = contract.get("symbol")
+            opt_token = str(contract.get("token"))
+            exchange = "BFO" if symbol == "SENSEX" else "NFO"
+            qty = int(contract.get("lotsize", 25 if symbol == "NIFTY" else 10))
+
+            try:
+                ltp_resp = self.order_manager.smart_api.ltpData(exchange, opt_symbol, opt_token)
+                if ltp_resp and ltp_resp.get("status") and ltp_resp.get("data"):
+                    opt_ltp = float(ltp_resp["data"]["ltp"])
+                else: return False
+                    
+                target_price = round(opt_ltp * target_mult, 1)
+                sl_price = round(opt_ltp * sl_mult, 1)
+                logging.info(f"🎯 [{symbol}] Executing Sniper Entry: {opt_symbol} @ ₹{opt_ltp} | Target: ₹{target_price} | SL: ₹{sl_price}")
+            except Exception as e:
+                return False
+
+            self.order_manager.execute_order(
+                symbol=opt_symbol, token=opt_token, qty=qty, trans_type="BUY",
+                exchange=exchange, price=opt_ltp, target_price=target_price, stop_loss_price=sl_price
+            )
+            return True
         except Exception:
-            return None
+            return False
 
     def evaluate_tick(self, symbol, spot_price, option_volume=None):
         if symbol not in INDICES_CONFIG: return
         current_time = time.time()
         
-        # ⏰ 1. STRICT TIME WINDOW FILTER (09:30 AM to 02:45 PM IST)
         now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
         current_hour_min = now_ist.hour * 100 + now_ist.minute
-        
-        if current_hour_min < 930 or current_hour_min > 1445:
-            return  # Outside optimal trading window
 
-        if current_time - self._last_debug_log > 15:
-            logging.info(f"🔎 [DEBUG - StrategyBrain] {symbol} live Spot Price received: ₹{spot_price}")
-            self._last_debug_log = current_time
-
-        history = self.price_histories[symbol]
+        history = self.price_histories.get(symbol, [])
         state_changed = False
 
-        if current_time - self.last_candle_time >= 60:
+        last_candle_time = self.last_candle_times.get(symbol, 0.0)
+        if current_time - last_candle_time >= 60:
             history.append(spot_price)
-            self.last_candle_time = current_time
+            if len(history) > 375: history.pop(0)
+            self.last_candle_times[symbol] = current_time
             state_changed = True
         elif len(history) == 0:
             history.append(spot_price)
+            self.last_candle_times[symbol] = current_time
             state_changed = True
         else:
             history[-1] = spot_price
 
-        if len(history) < 15:
-            if current_time - self._last_rsi_log >= 180:
-                logging.info(f"⏳ [{symbol} WARM-UP] Accumulating candles: {len(history)}/15 collected.")
-                self._last_rsi_log = current_time
+        self.price_histories[symbol] = history
+        
+        if len(history) < 21:
             if state_changed: self._save_state()
             return
 
         current_rsi = self._calculate_rsi(history)
-        current_atr = self._calculate_atr(history)
-        supertrend_trend = self._calculate_supertrend(history)
-        market_regime = self._detect_market_regime(symbol, history)
         
-        if current_time - self._last_rsi_log >= 300:
-            logging.info(f"📊 [{symbol} REGIME: {market_regime}] Price: ₹{spot_price:.2f} | RSI: {current_rsi:.2f} | ATR: {current_atr:.2f}")
-            self._last_rsi_log = current_time
+        if symbol not in self.rsi_histories: self.rsi_histories[symbol] = []
+        self.rsi_histories[symbol].append(current_rsi)
+        if len(self.rsi_histories[symbol]) > 5:
+            self.rsi_histories[symbol].pop(0)
+            
+        ema_9 = self._calculate_ema(history, 9)
+        ema_21 = self._calculate_ema(history, 21)
+        vwap = sum(history) / len(history)
 
-        symbol_cooldown = self.cooldown_until.get(symbol, 0.0)
-        if current_time < symbol_cooldown:
+        # VWAP & EMA SNIPER FILTERS
+        vwap_buffer = 10.0 if symbol == "NIFTY" else 30.0
+        ema_spread_min = 5.0 if symbol == "NIFTY" else 15.0
+
+        if ema_9 > (ema_21 + ema_spread_min) and spot_price > (vwap + vwap_buffer):
+            macro_trend = "BULLISH"
+        elif ema_9 < (ema_21 - ema_spread_min) and spot_price < (vwap - vwap_buffer):
+            macro_trend = "BEARISH"
+        else:
+            macro_trend = "CHOPPY"
+            
+        self.current_regimes[symbol] = macro_trend
+
+        # Strict Execution Window
+        if current_hour_min < 945 or current_hour_min > 1515:
+            if state_changed: self._save_state()
+            return
+
+        if current_time < self.cooldown_until.get(symbol, 0.0):
             self.last_arsis[symbol] = current_rsi
             return
 
         last_rsi = self.last_arsis.get(symbol, 50.0)
         config = INDICES_CONFIG[symbol]
+        
+        recent_rsis = self.rsi_histories[symbol]
+        rsi_dipped_bullish = any(r < 45 for r in recent_rsis)
+        rsi_spiked_bearish = any(r > 55 for r in recent_rsis)
 
-        # ==========================================
-        # 🌐 TRENDING REGIME
-        # ==========================================
-        if market_regime == "TRENDING":
-            if last_rsi < 70 and current_rsi >= 70:
-                logging.info(f"⚡ [{symbol} TRENDING BULLISH] RSI crossed 70 ({current_rsi:.2f}).")
-                if supertrend_trend == "BULLISH":
-                    pcr = self._get_live_pcr(symbol, spot_price)
-                    if pcr is None or pcr >= 0.80:
-                        if self._trigger_entry(symbol, spot_price, "CE", config["trending_target_mult"], config["trending_sl_mult"]):
-                            self.cooldown_until[symbol] = time.time() + 1800
-                self.last_arsis[symbol] = current_rsi 
-                self._save_state()
+        if macro_trend == "BULLISH":
+            if last_rsi < 50 and current_rsi >= 50 and rsi_dipped_bullish:
+                logging.info(f"⚡ [{symbol} CONFIRMED BREAKOUT] Trend UP. Clean RSI Hook. Buying CE...")
+                if self._trigger_entry(symbol, spot_price, "CE", config["trending_target_mult"], config["trending_sl_mult"]):
+                    self.cooldown_until[symbol] = time.time() + 900
                 
-            elif last_rsi > 30 and current_rsi <= 30:
-                logging.info(f"⚡ [{symbol} TRENDING BEARISH] RSI crossed 30 ({current_rsi:.2f}).")
-                if supertrend_trend == "BEARISH":
-                    pcr = self._get_live_pcr(symbol, spot_price)
-                    if pcr is None or pcr <= 1.20:
-                        if self._trigger_entry(symbol, spot_price, "PE", config["trending_target_mult"], config["trending_sl_mult"]):
-                            self.cooldown_until[symbol] = time.time() + 1800
-                self.last_arsis[symbol] = current_rsi 
-                self._save_state()
-
-        # ==========================================
-        # 🌐 CHOPPY REGIME
-        # ==========================================
-        elif market_regime == "CHOPPY":
-            if last_rsi < 78 and current_rsi >= 78:
-                logging.info(f"⚡ [{symbol} CHOPPY FADE TOP] RSI reached {current_rsi:.2f}. Buying Put (PE)...")
+        elif macro_trend == "BEARISH":
+            if last_rsi > 50 and current_rsi <= 50 and rsi_spiked_bearish:
+                logging.info(f"⚡ [{symbol} CONFIRMED BREAKDOWN] Trend DOWN. Clean RSI Hook. Buying PE...")
+                if self._trigger_entry(symbol, spot_price, "PE", config["trending_target_mult"], config["trending_sl_mult"]):
+                    self.cooldown_until[symbol] = time.time() + 900
+                
+        elif macro_trend == "CHOPPY":
+            if last_rsi < 80 and current_rsi >= 80:
+                logging.info(f"⚡ [{symbol} CHOPPY OVERBOUGHT] Price rejected at top. Scalping PE...")
                 if self._trigger_entry(symbol, spot_price, "PE", config["choppy_target_mult"], config["choppy_sl_mult"]):
                     self.cooldown_until[symbol] = time.time() + 1800
-                self.last_arsis[symbol] = current_rsi
-                self._save_state()
-
-            elif last_rsi > 22 and current_rsi <= 22:
-                logging.info(f"⚡ [{symbol} CHOPPY FADE BOTTOM] RSI reached {current_rsi:.2f}. Buying Call (CE)...")
+            elif last_rsi > 20 and current_rsi <= 20:
+                logging.info(f"⚡ [{symbol} CHOPPY OVERSOLD] Price rejected at bottom. Scalping CE...")
                 if self._trigger_entry(symbol, spot_price, "CE", config["choppy_target_mult"], config["choppy_sl_mult"]):
                     self.cooldown_until[symbol] = time.time() + 1800
-                self.last_arsis[symbol] = current_rsi
-                self._save_state()
 
         if last_rsi != current_rsi:
             self.last_arsis[symbol] = current_rsi
@@ -257,60 +269,3 @@ class StrategyBrain:
 
         if state_changed:
             self._save_state()
-
-    def _trigger_entry(self, symbol, spot_price, instrument_type, target_mult, sl_mult):
-        config = INDICES_CONFIG.get(symbol, {})
-        token = config.get("index_token")
-        builder = self.options_builders.get(token)
-        if not builder: return False
-        
-        contract = builder.get_nearest_expiry_contract(spot_price, instrument_type)
-        if not contract: return False
-
-        contract_symbol = contract.get('symbol')
-        contract_token = contract.get('token')
-        strike = contract.get('strike')
-        current_time = time.time()
-
-        # ⏱️ 60-MINUTE STRIKE COOLDOWN CHECK
-        if contract_symbol in self.contract_cooldowns:
-            cooldown_expiry = self.contract_cooldowns[contract_symbol]
-            if current_time < cooldown_expiry:
-                remaining_mins = int((cooldown_expiry - current_time) / 60)
-                logging.warning(f"🛡️ [STRIKE COOLDOWN] Contract {contract_symbol} is in 60-min cool-down ({remaining_mins} mins left). Skipping.")
-                return False
-            else:
-                del self.contract_cooldowns[contract_symbol]
-
-        try:
-            live_premium = 0.0
-            if getattr(self.order_engine, 'smart_api', None):
-                exchange = config.get("exchange", "NFO")
-                resp = self.order_engine.smart_api.ltpData(exchange, contract_symbol, contract_token)
-                if resp and resp.get('status'):
-                    live_premium = float(resp['data']['ltp'])
-            
-            if live_premium <= 0: live_premium = 100.0
-
-            target_price = round(live_premium * target_mult, 2)
-            stop_loss_price = round(live_premium * sl_mult, 2)
-
-            self.order_engine.execute_options_order(
-                symbol=contract_symbol,
-                strike=strike,
-                token=contract_token,
-                entry_price=live_premium,         
-                target_price=target_price,        
-                stop_loss_price=stop_loss_price,  
-                action="BUY",
-                instrument_type=instrument_type,
-                entry_spot=spot_price
-            )
-            
-            self.contract_cooldowns[contract_symbol] = current_time + 3600
-            self._save_state()
-            logging.info(f"⏱️ [STRIKE LOCKED] {contract_symbol} placed on 60-minute cool-down timer.")
-            return True
-        except Exception as e:
-            logging.error(f"❌ Execution error: {e}")
-            return False

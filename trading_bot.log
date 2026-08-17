@@ -1,220 +1,165 @@
-2026-08-07 16:18:58,341 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:18:58,342 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:18:58,342 - ERROR - ❌ Missing broker credentials in .env file.
-2026-08-07 16:18:58,800 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:18:58,800 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:18:58,839 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:18:58,839 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:18:58,840 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:18:58,840 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:18:58,840 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:18:58,840 - WARNING - ⚠️ Running without active broker SmartAPI connection.
-2026-08-07 16:21:33,045 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:21:33,046 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:21:33,137 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:21:33,589 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:21:33,590 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:21:33,629 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:21:33,629 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:21:33,630 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:21:33,630 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:21:33,630 - INFO - Starting broker reconciliation...
-2026-08-07 16:21:33,666 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
-2026-08-07 16:21:33,667 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:21:33,667 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:21:33,668 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
-Traceback (most recent call last):
-  File "/home/ec2-user/AI_FNOBot/main.py", line 173, in <module>
-    main()
-  File "/home/ec2-user/AI_FNOBot/main.py", line 126, in main
-    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
-TypeError: __init__() missing 1 required positional argument: 'feed_token'
-2026-08-07 16:22:36,573 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:22:36,574 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:22:36,666 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:22:37,127 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:22:37,127 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:22:37,166 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:22:37,167 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:22:37,167 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:22:37,167 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:22:37,167 - INFO - Starting broker reconciliation...
-2026-08-07 16:22:37,201 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
-2026-08-07 16:22:37,202 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:22:37,202 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:22:37,202 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:22:37,202 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
-Traceback (most recent call last):
-  File "/home/ec2-user/AI_FNOBot/main.py", line 181, in <module>
-    main()
-  File "/home/ec2-user/AI_FNOBot/main.py", line 134, in main
-    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
-TypeError: __init__() missing 1 required positional argument: 'feed_token'
-2026-08-07 16:23:33,492 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:23:33,493 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:23:33,585 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:23:34,041 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:23:34,042 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:23:34,082 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:23:34,082 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:23:34,082 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:23:34,082 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:23:34,083 - INFO - Starting broker reconciliation...
-2026-08-07 16:23:34,114 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
-2026-08-07 16:23:34,114 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:23:34,114 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:23:34,115 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:23:34,115 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
-Traceback (most recent call last):
-  File "/home/ec2-user/AI_FNOBot/main.py", line 188, in <module>
-    main()
-  File "/home/ec2-user/AI_FNOBot/main.py", line 141, in main
-    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
-TypeError: __init__() missing 1 required positional argument: 'feed_token'
-2026-08-07 16:25:25,082 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:25:25,082 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:25:25,182 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:25:25,645 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:25:25,645 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:25:25,685 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:25:25,685 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:25:25,686 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:25:25,686 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:25:25,686 - INFO - Starting broker reconciliation...
-2026-08-07 16:25:25,719 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
-2026-08-07 16:25:25,720 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:25:25,720 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:25:25,720 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:25:25,720 - CRITICAL - ❌ Fatal crash in main loop: __init__() missing 1 required positional argument: 'feed_token'
-Traceback (most recent call last):
-  File "/home/ec2-user/AI_FNOBot/main.py", line 188, in <module>
-    main()
-  File "/home/ec2-user/AI_FNOBot/main.py", line 141, in main
-    sws = SmartWebSocketV2(feed_token, client_code, smart_api.access_token)
-TypeError: __init__() missing 1 required positional argument: 'feed_token'
-2026-08-07 16:27:44,231 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:27:44,231 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:27:44,326 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:27:44,787 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:27:44,788 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:27:44,827 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:27:44,827 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:27:44,828 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:27:44,828 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:27:44,828 - INFO - Starting broker reconciliation...
-2026-08-07 16:27:44,863 - ERROR - ❌ Error during trade reconciliation: 'NoneType' object is not iterable
-2026-08-07 16:27:44,864 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:27:44,864 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:27:44,864 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:27:44,865 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 16:27:45,060 - INFO - Websocket connected
-2026-08-07 16:27:45,060 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 16:27:45,061 - INFO - 📡 Subscribed to indices: ['NIFTY']
-2026-08-07 16:30:06,399 - INFO - tearing down on exception 
-2026-08-07 16:30:06,404 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7fd9760fe730>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 16:30:06,404 - ERROR - ❌ WebSocket Error: Connection closed
-2026-08-07 16:30:25,638 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:30:25,639 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:30:25,728 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:30:26,190 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:30:26,190 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:30:26,230 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:30:26,230 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:30:26,230 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:30:26,231 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:30:26,231 - INFO - Starting broker reconciliation...
-2026-08-07 16:30:26,265 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:30:26,265 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:30:26,266 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:30:26,266 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 16:30:26,281 - INFO - Websocket connected
-2026-08-07 16:30:26,281 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 16:30:26,281 - INFO - 📡 Subscribed to indices: ['NIFTY']
-2026-08-07 16:33:10,153 - INFO - tearing down on exception 
-2026-08-07 16:33:10,157 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f16a263e730>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 16:33:10,157 - ERROR - ❌ WebSocket Error: Connection closed
-2026-08-07 16:33:34,247 - INFO - Initializing Multi-Index Framework for: ['NIFTY']
-2026-08-07 16:33:34,248 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:33:34,341 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:33:34,802 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:33:34,802 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:33:34,841 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:33:34,841 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:33:34,842 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:33:34,842 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:33:34,842 - INFO - Starting broker reconciliation...
-2026-08-07 16:33:34,874 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:33:34,875 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:33:34,875 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:33:34,876 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 16:33:34,891 - INFO - Websocket connected
-2026-08-07 16:33:34,891 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 16:33:34,892 - INFO - 📡 Subscribed to indices: ['NIFTY']
-2026-08-07 16:33:56,346 - INFO - tearing down on exception 
-2026-08-07 16:33:56,349 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f69c8ed6d30>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 16:33:56,349 - ERROR - ❌ WebSocket Error: Connection closed
-2026-08-07 16:39:27,013 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'BANKNIFTY', 'SENSEX']
-2026-08-07 16:39:27,013 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 16:39:27,104 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 16:39:27,562 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 16:39:27,563 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 16:39:27,602 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 16:39:27,641 - INFO - 🔗 [ChainBuilder-BANKNIFTY] Loaded 1044 derivative contracts from master.
-2026-08-07 16:39:27,680 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
-2026-08-07 16:39:27,681 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 16:39:27,681 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 16:39:27,681 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 16:39:27,681 - INFO - Starting broker reconciliation...
-2026-08-07 16:39:27,714 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 16:39:27,715 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 16:39:27,715 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 16:39:27,716 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 16:39:27,734 - INFO - Websocket connected
-2026-08-07 16:39:27,734 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 16:39:27,735 - INFO - 📡 Subscribed to indices: ['NIFTY', 'BANKNIFTY', 'SENSEX']
-2026-08-07 16:42:32,548 - INFO - tearing down on exception 
-2026-08-07 16:42:32,553 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7ff8a1bae0a0>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 16:42:32,553 - ERROR - ❌ WebSocket Error: Connection closed
-2026-08-07 18:26:55,299 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'BANKNIFTY', 'SENSEX']
-2026-08-07 18:26:55,301 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 18:26:55,392 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 18:26:55,924 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 18:26:55,924 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 18:26:55,963 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 18:26:56,001 - INFO - 🔗 [ChainBuilder-BANKNIFTY] Loaded 1044 derivative contracts from master.
-2026-08-07 18:26:56,040 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
-2026-08-07 18:26:56,041 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 18:26:56,042 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 18:26:56,042 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 18:26:56,042 - INFO - Starting broker reconciliation...
-2026-08-07 18:26:56,075 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 18:26:56,076 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 18:26:56,077 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 18:26:56,078 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 18:26:56,095 - INFO - Websocket connected
-2026-08-07 18:26:56,095 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 18:26:56,096 - INFO - 📡 Subscribed to indices: ['NIFTY', 'BANKNIFTY', 'SENSEX']
-2026-08-07 18:27:02,120 - INFO - tearing down on exception 
-2026-08-07 18:27:02,124 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f9ea9a88b20>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 18:27:02,124 - ERROR - ❌ WebSocket Error: Connection closed
-2026-08-07 18:27:26,069 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
-2026-08-07 18:27:26,070 - INFO - ✅ Local DatabaseManager initialized cleanly.
-2026-08-07 18:27:26,162 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
-2026-08-07 18:27:26,614 - INFO - 📁 Loaded scrip master cache (164491 tokens).
-2026-08-07 18:27:26,614 - INFO - ✅ OrderExecutionEngine initialized. Running in: 📝 PAPER TRADING MODE
-2026-08-07 18:27:26,653 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
-2026-08-07 18:27:26,692 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
-2026-08-07 18:27:26,692 - INFO - 💾 [STATE RECOVERED] Active Strike Cooldowns: 0
-2026-08-07 18:27:26,693 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
-2026-08-07 18:27:26,693 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
-2026-08-07 18:27:26,693 - INFO - Starting broker reconciliation...
-2026-08-07 18:27:26,733 - INFO - ✅ Broker reconciliation complete.
-2026-08-07 18:27:26,733 - INFO - ✅ Multi-Index Framework fully operational.
-2026-08-07 18:27:26,734 - INFO - 🔑 Feed token generated dynamically from active session.
-2026-08-07 18:27:26,734 - INFO - Launching core live WebSocket market data stream...
-2026-08-07 18:27:26,750 - INFO - Websocket connected
-2026-08-07 18:27:26,750 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
-2026-08-07 18:27:26,751 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX']
-2026-08-07 18:27:33,625 - INFO - tearing down on exception 
-2026-08-07 18:27:33,629 - ERROR - error from callback <bound method SmartWebSocketV2._on_close of <SmartApi.smartWebSocketV2.SmartWebSocketV2 object at 0x7f4926683070>>: _on_close() takes 2 positional arguments but 4 were given
-2026-08-07 18:27:33,630 - ERROR - ❌ WebSocket Error: Connection closed
+2026-08-17 19:20:00,191 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
+2026-08-17 19:20:00,192 - INFO - ✅ Local DatabaseManager initialized (WAL Mode Active, IST Timestamps).
+2026-08-17 19:20:00,291 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-17 19:20:00,291 - INFO - 🛡️ [FNO Bot] API Rate Limiter engaged (Max 1 call/sec).
+2026-08-17 19:20:00,784 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-17 19:20:00,826 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-17 19:20:00,865 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-17 19:20:00,869 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-17 19:20:00,869 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-17 19:20:00,870 - INFO - 💓 System Heartbeat Monitor active.
+2026-08-17 19:20:00,870 - INFO - ⏰ 3:15 PM EOD Kill Switch Monitor active.
+2026-08-17 19:20:00,870 - INFO - Starting broker reconciliation...
+2026-08-17 19:20:00,918 - INFO - ✅ Broker reconciliation complete.
+2026-08-17 19:20:00,918 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-17 19:20:00,919 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-17 19:20:00,920 - INFO - Launching core live WebSocket market data stream...
+2026-08-17 19:20:00,943 - INFO - Websocket connected
+2026-08-17 19:20:00,944 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-17 19:20:00,946 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX'] with payload: [{'exchangeType': 1, 'tokens': ['26000']}, {'exchangeType': 3, 'tokens': ['99919000']}]
+2026-08-17 19:20:00,950 - INFO - 📈 Tick Received - [NIFTY] Token: 26000 | Spot LTP: ₹24287.65
+2026-08-17 19:20:00,952 - INFO - 📈 Tick Received - [SENSEX] Token: 99919000 | Spot LTP: ₹77728.16
+2026-08-17 19:20:02,483 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:20:10,881 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:20:10,882 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:20:20,893 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:20:20,894 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:20:30,904 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:20:30,905 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:20:40,916 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:20:40,916 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:20:50,927 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:20:50,928 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:21:00,936 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: CHOPPY | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:21:00,939 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:21:00,939 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: qty
+2026-08-17 19:21:02,548 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:21:03,985 - INFO - 🛑 Bot stopped manually by user.
+2026-08-17 19:22:02,613 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:22:17,926 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
+2026-08-17 19:22:17,927 - INFO - ✅ Local DatabaseManager initialized (WAL Mode Active, IST Timestamps).
+2026-08-17 19:22:18,015 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-17 19:22:18,015 - INFO - 🛡️ [FNO Bot] API Rate Limiter engaged (Max 1 call/sec).
+2026-08-17 19:22:18,508 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-17 19:22:18,546 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-17 19:22:18,585 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-17 19:22:18,586 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-17 19:22:18,586 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-17 19:22:18,586 - INFO - 💓 System Heartbeat Monitor active.
+2026-08-17 19:22:18,587 - INFO - ⏰ 3:15 PM EOD Kill Switch Monitor active.
+2026-08-17 19:22:18,587 - INFO - Starting broker reconciliation...
+2026-08-17 19:22:18,625 - INFO - ✅ Broker reconciliation complete.
+2026-08-17 19:22:18,625 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-17 19:22:18,626 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-17 19:22:18,626 - INFO - Launching core live WebSocket market data stream...
+2026-08-17 19:22:18,644 - INFO - Websocket connected
+2026-08-17 19:22:18,645 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-17 19:22:18,645 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX'] with payload: [{'exchangeType': 1, 'tokens': ['26000']}, {'exchangeType': 3, 'tokens': ['99919000']}]
+2026-08-17 19:22:18,649 - INFO - 📈 Tick Received - [NIFTY] Token: 26000 | Spot LTP: ₹24287.65
+2026-08-17 19:22:18,651 - INFO - 📈 Tick Received - [SENSEX] Token: 99919000 | Spot LTP: ₹77728.16
+2026-08-17 19:22:28,596 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:22:28,598 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: exchange
+2026-08-17 19:22:33,192 - INFO - 🛑 Bot stopped manually by user.
+2026-08-17 19:22:54,735 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
+2026-08-17 19:22:54,736 - INFO - ✅ Local DatabaseManager initialized (WAL Mode Active, IST Timestamps).
+2026-08-17 19:22:54,824 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-17 19:22:54,824 - INFO - 🛡️ [FNO Bot] API Rate Limiter engaged (Max 1 call/sec).
+2026-08-17 19:22:55,257 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-17 19:22:55,296 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-17 19:22:55,334 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-17 19:22:55,335 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-17 19:22:55,335 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-17 19:22:55,336 - INFO - 💓 System Heartbeat Monitor active.
+2026-08-17 19:22:55,336 - INFO - ⏰ 3:15 PM EOD Kill Switch Monitor active.
+2026-08-17 19:22:55,336 - INFO - Starting broker reconciliation...
+2026-08-17 19:22:55,373 - INFO - ✅ Broker reconciliation complete.
+2026-08-17 19:22:55,373 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-17 19:22:55,374 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-17 19:22:55,374 - INFO - Launching core live WebSocket market data stream...
+2026-08-17 19:22:55,524 - INFO - Websocket connected
+2026-08-17 19:22:55,524 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-17 19:22:55,524 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX'] with payload: [{'exchangeType': 1, 'tokens': ['26000']}, {'exchangeType': 3, 'tokens': ['99919000']}]
+2026-08-17 19:22:55,529 - INFO - 📈 Tick Received - [NIFTY] Token: 26000 | Spot LTP: ₹24287.65
+2026-08-17 19:22:55,529 - INFO - 📈 Tick Received - [SENSEX] Token: 99919000 | Spot LTP: ₹77728.16
+2026-08-17 19:23:02,678 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:23:05,347 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:23:05,347 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: exchange
+2026-08-17 19:23:15,357 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:23:15,358 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: exchange
+2026-08-17 19:23:25,368 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:23:25,370 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: exchange
+2026-08-17 19:23:35,379 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:23:35,379 - ERROR - ❌ Error in EOD Square Off Monitor: no such column: exchange
+2026-08-17 19:23:44,958 - INFO - 🛑 Bot stopped manually by user.
+2026-08-17 19:24:02,742 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:24:47,584 - INFO - Initializing Multi-Index Framework for: ['NIFTY', 'SENSEX']
+2026-08-17 19:24:47,585 - INFO - ✅ Local DatabaseManager initialized (WAL Mode Active, IST Timestamps).
+2026-08-17 19:24:47,676 - INFO - 🔐 Successfully authenticated with SmartAPI using TOTP.
+2026-08-17 19:24:47,677 - INFO - 🛡️ [FNO Bot] API Rate Limiter engaged (Max 1 call/sec).
+2026-08-17 19:24:48,112 - INFO - 📁 Loaded scrip master cache (164491 tokens).
+2026-08-17 19:24:48,151 - INFO - 🔗 [ChainBuilder-NIFTY] Loaded 5148 derivative contracts from master.
+2026-08-17 19:24:48,189 - INFO - 🔗 [ChainBuilder-SENSEX] Loaded 3362 derivative contracts from master.
+2026-08-17 19:24:48,190 - INFO - 🛡️ [TrailingStopLossMonitor] Background thread started.
+2026-08-17 19:24:48,190 - INFO - 🛡️ Trailing Stop-Loss Exit Monitor active.
+2026-08-17 19:24:48,191 - INFO - 💓 System Heartbeat Monitor active.
+2026-08-17 19:24:48,191 - INFO - ⏰ 3:15 PM EOD Kill Switch Monitor active.
+2026-08-17 19:24:48,191 - INFO - Starting broker reconciliation...
+2026-08-17 19:24:48,226 - INFO - ✅ Broker reconciliation complete.
+2026-08-17 19:24:48,226 - INFO - ✅ Multi-Index Framework fully operational.
+2026-08-17 19:24:48,226 - INFO - 🔑 Feed token generated dynamically from active session.
+2026-08-17 19:24:48,227 - INFO - Launching core live WebSocket market data stream...
+2026-08-17 19:24:48,241 - INFO - Websocket connected
+2026-08-17 19:24:48,241 - INFO - 🔌 Live WebSocket Connection Established. Subscribing tokens...
+2026-08-17 19:24:48,241 - INFO - 📡 Subscribed to indices: ['NIFTY', 'SENSEX'] with payload: [{'exchangeType': 1, 'tokens': ['26000']}, {'exchangeType': 3, 'tokens': ['99919000']}]
+2026-08-17 19:24:48,245 - INFO - 📈 Tick Received - [NIFTY] Token: 26000 | Spot LTP: ₹24287.65
+2026-08-17 19:24:48,246 - INFO - 📈 Tick Received - [SENSEX] Token: 99919000 | Spot LTP: ₹77728.16
+2026-08-17 19:24:58,201 - WARNING - ⏰ [KILL SWITCH] 3:15 PM REACHED! INITIATING EOD AUTO-SQUARE-OFF.
+2026-08-17 19:24:58,202 - INFO - ✅ [KILL SWITCH] No open trades to square off.
+2026-08-17 19:25:02,807 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:25:48,256 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: CHOPPY | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:26:02,872 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:26:48,321 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: CHOPPY | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:27:02,936 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:27:48,385 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: CHOPPY | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:28:03,002 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:28:48,447 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: CHOPPY | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:28:48,466 - INFO - 🛑 Bot stopped manually by user.
+2026-08-17 19:29:03,068 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:30:03,148 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:31:03,214 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:32:03,279 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:33:03,344 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:34:03,408 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:35:03,474 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:36:03,538 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:37:03,602 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:38:03,668 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:39:03,733 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:40:03,796 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:41:03,860 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:42:03,925 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:43:03,988 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:44:04,057 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:45:04,121 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:46:04,186 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:47:04,251 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:48:04,316 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:49:04,380 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:50:04,450 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:51:04,515 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:52:04,579 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:53:04,643 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:54:04,718 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:55:04,783 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:56:04,850 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:57:04,914 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:58:04,979 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 19:59:05,045 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:00:05,111 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:01:05,177 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:02:05,242 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:03:05,308 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:04:05,373 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:05:05,438 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:06:05,503 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12
+2026-08-17 20:07:05,569 - INFO - 💓 [SYSTEM STATUS] [NIFTY] Spot: ₹24287.65 | Regime: BEARISH | Trades Today: 10 || [SENSEX] Spot: ₹77728.16 | Regime: CHOPPY | Trades Today: 12

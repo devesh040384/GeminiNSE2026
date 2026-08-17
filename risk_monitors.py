@@ -41,7 +41,10 @@ class TrailingStopLossMonitor(threading.Thread):
                 current_price = entry_price
                 if self.smart_api and token:
                     try:
-                        resp = self.smart_api.ltpData("NFO", symbol, token)
+                        #resp = self.smart_api.ltpData("NFO", symbol, token)
+                        # Dynamically select BFO for Sensex, and NFO for Nifty/BankNifty
+                        trade_exchange = "BFO" if str(symbol).startswith("SENSEX") else "NFO"
+                        resp = self.smart_api.ltpData(trade_exchange, symbol, token)
                         if resp and resp.get('status'):
                             current_price = float(resp['data']['ltp'])
                     except Exception:

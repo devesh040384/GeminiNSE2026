@@ -1,103 +1,89 @@
+import time
 import logging
-from datetime import datetime, timedelta
 
 class OrderExecutionEngine:
-    def __init__(self, smart_api, db_manager, scrip_master=None, paper_trading=True):
+    def __init__(self, smart_api, db_manager, scrip_master=None, paper_trading=True, **kwargs):
         self.smart_api = smart_api
-        self.db = db_manager
-        self.scrip_master = scrip_master or []
+        self.db_manager = db_manager
+        self.scrip_master = scrip_master
         self.paper_trading = paper_trading
+
+    def execute_order(self, symbol, token, qty, trans_type="BUY", exchange="NFO", 
+                      order_type="MARKET", product_type="CARRYFORWARD", price=0.0, 
+                      target_price=0.0, stop_loss_price=0.0):
+        """
+        Builds the order payload, handles API rate limits via exponential backoff, 
+        and logs successful entries to the local database.
+        """
         
-        mode_label = "📝 PAPER TRADING MODE"
-        if not self.paper_trading:
-            mode_label = "🔥 LIVE TRADING MODE (REAL MONEY)"
-        logging.info(f"✅ OrderExecutionEngine initialized. Running in: {mode_label}")
+        logging.info(f"⚙️ Preparing to {trans_type} {qty}x {symbol} ({exchange}) | Paper Trading: {self.paper_trading}")
 
-    def execute_options_order(self, symbol, strike, token, entry_price, target_price, stop_loss_price, action="BUY", instrument_type="CE", entry_spot=0.0):
-        """Executes and logs an options derivative order (Supports both Paper and Live execution)."""
-        try:
-            lot_size = 65  # Default fallback lot size if not specified
+        # 1. PAPER TRADING MODE
+        if self.paper_trading:
+            time.sleep(0.1)
+            mock_order_id = f"mock_{int(time.time())}"
             
-            # Attempt to look up precise lot size from scrip master if available
-            if self.scrip_master:
-                for scrip in self.scrip_master:
-                    if str(scrip.get('token')) == str(token) or scrip.get('symbol') == symbol:
-                        lotsize_raw = scrip.get('lotsize') or scrip.get('lot_size')
-                        if lotsize_raw:
-                            lot_size = int(lotsize_raw)
-                            break
-
-            if self.paper_trading:
-                logging.info(f"📋 [PAPER ORDER EXECUTED] Symbol: {symbol} | Strike: {strike} | Qty: {lot_size} | Entry Premium: ₹{entry_price:.2f} | Target Premium: ₹{target_price:.2f} | SL Premium: ₹ {stop_loss_price:.2f}")
-            else:
-                # Live broker order placement placeholder (Angel One SmartAPI placeOrder integration)
+            # 🛡️ FAILSAFE: If price is 0.0, actively fetch the real LTP from the market
+            if price <= 0.0:
                 try:
-                    orderparams = {
-                        "variety": "NORMAL",
-                        "tradingsymbol": symbol,
-                        "symboltoken": str(token),
-                        "transactiontype": action.upper(),
-                        "exchange": "NFO",
-                        "ordertype": "MARKET",
-                        "producttype": "INTRADAY",
-                        "duration": "DAY",
-                        "price": "0",
-                        "squareoff": "0",
-                        "stoploss": "0",
-                        "quantity": str(lot_size)
-                    }
-                    if self.smart_api:
-                        order_id = self.smart_api.placeOrder(orderparams)
-                        logging.info(f"🔥 [LIVE ORDER PLACED] Order ID: {order_id} | Symbol: {symbol} | Qty: {lot_size}")
-                except Exception as live_err:
-                    logging.error(f"❌ Broker Live Order Placement Failed: {live_err}")
-                    return {"status": "FAILED", "reason": str(live_err)}
+                    ltp_resp = self.smart_api.ltpData(exchange, symbol, str(token))
+                    if ltp_resp and ltp_resp.get("status") and ltp_resp.get("data"):
+                        price = float(ltp_resp["data"]["ltp"])
+                except Exception as e:
+                    logging.error(f"❌ Could not fetch fallback LTP for {symbol}: {e}")
 
-            # 🛡️ Safe database logging wrapper (Prevents execution crashes if a method name varies)
-            try:
-                if hasattr(self.db, 'log_paper_order'):
-                    self.db.log_paper_order(
-                        symbol=symbol,
-                        token=token,
-                        strike=strike,
-                        entry_price=entry_price,
-                        target_price=target_price,
-                        stop_loss_price=stop_loss_price,
-                        action=action,
-                        instrument_type=instrument_type,
-                        entry_spot=entry_spot
-                    )
-                elif hasattr(self.db, 'log_trade'):
-                    self.db.log_trade(
-                        symbol=symbol,
-                        token=token,
-                        strike=strike,
-                        entry_price=entry_price,
-                        target_price=target_price,
-                        stop_loss_price=stop_loss_price,
-                        action=action,
-                        instrument_type=instrument_type,
-                        entry_spot=entry_spot
-                    )
-                elif hasattr(self.db, 'log_live_order'):
-                    self.db.log_live_order(
-                        symbol=symbol,
-                        token=token,
-                        strike=strike,
-                        entry_price=entry_price,
-                        target_price=target_price,
-                        stop_loss_price=stop_loss_price,
-                        action=action,
-                        instrument_type=instrument_type,
-                        entry_spot=entry_spot
-                    )
-                else:
-                    logging.warning("⚠️ [DB WARNING] Database instance missing core logging method. Trade processed in memory.")
-            except Exception as db_err:
-                logging.error(f"❌ Database logging exception safely bypassed: {db_err}")
+            entry_price = price if price > 0 else 0.0
+            
+            logging.info(f"✅ [PAPER TRADE] Successfully executed {trans_type} for {symbol} @ ₹{entry_price}. ID: {mock_order_id}")
+            self.db_manager.log_trade(symbol, token, entry_price, target_price, stop_loss_price)
+            return mock_order_id
 
-            return {"status": "SUCCESS", "symbol": symbol, "entry_price": entry_price}
+        # 2. LIVE TRADING MODE (REAL MONEY)
+        order_params = {
+            "variety": "NORMAL",
+            "tradingsymbol": symbol,
+            "symboltoken": str(token),
+            "transactiontype": trans_type,
+            "exchange": exchange,
+            "ordertype": order_type,
+            "producttype": product_type,
+            "duration": "DAY",
+            "price": price if order_type == "LIMIT" else 0,
+            "quantity": qty
+        }
 
+        try:
+            # Exponential backoff for API rate limits
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    order_id = self.smart_api.placeOrder(order_params)
+                    if order_id:
+                        logging.info(f"✅ [LIVE TRADE] Order Placed: {symbol} | ID: {order_id}")
+                        
+                        # 🛡️ FAILSAFE: Fetch exact entry price for market orders
+                        entry_price = price
+                        if order_type == "MARKET" or entry_price <= 0.0:
+                            try:
+                                ltp_resp = self.smart_api.ltpData(exchange, symbol, str(token))
+                                if ltp_resp and ltp_resp.get("status") and ltp_resp.get("data"):
+                                    entry_price = float(ltp_resp["data"]["ltp"])
+                            except Exception:
+                                pass
+                        
+                        self.db_manager.log_trade(symbol, token, entry_price, target_price, stop_loss_price)
+                        return order_id
+                        
+                except Exception as e:
+                    if "rate limit" in str(e).lower():
+                        logging.warning(f"⚠️ Rate limit hit. Retrying in {2 ** attempt}s...")
+                        time.sleep(2 ** attempt)
+                    else:
+                        raise e
+                        
+            logging.error(f"❌ Failed to place live order for {symbol} after {retries} attempts.")
+            return None
+            
         except Exception as e:
-            logging.error(f"❌ Critical error inside execute_options_order: {e}")
-            return {"status": "ERROR", "message": str(e)}
+            logging.error(f"❌ Live Order Execution Error for {symbol}: {e}")
+            return None
